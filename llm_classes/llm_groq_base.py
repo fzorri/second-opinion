@@ -29,18 +29,22 @@ class Groq_Base(LLMBase):
     def send_message(self, text):
         # Append the user's message to the conversation history
         self.conversation_history.append({"role": "user", "content": text})
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=self.conversation_history
+            )
+            
+            # Append the model's response to the conversation history
+            self.conversation_history.append({"role": "assistant", "content": response.choices[0].message.content})
+            Tools.save_conversation(self.conversation_history,self.modelFolder,
+                                    self.timestamp)
 
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=self.conversation_history
-        )
-        
-         # Append the model's response to the conversation history
-        self.conversation_history.append({"role": "assistant", "content": response.choices[0].message.content})
-        Tools.save_conversation(self.conversation_history,self.modelFolder,
-                                self.timestamp)
+            return self.modelName, response.choices[0].message.content
 
-        return self.modelName, response.choices[0].message.content
+        except Exception as e:
+            error_message = "An unexpected error occurred:  \n" + str(e)
+            return self.modelName, error_message
     
     def load_conversation(self, conversation_file):
         fname= os.path.basename(conversation_file)

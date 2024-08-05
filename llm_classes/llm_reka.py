@@ -2,7 +2,7 @@
 
 import os
 import json
-import reka
+from reka.client import Reka
 from llm_classes.llm_base import LLMBase
 from config import Reka_CFG
 from datetime import datetime
@@ -23,26 +23,35 @@ class Reka_LLM(LLMBase):
 
     #this is going to return self.client= MistralClient initialized
     def initialize_client(self):
-        reka.API_KEY = self.api_key
-        return reka
+        #reka.API_KEY = self.api_key
+        #return reka
+        return Reka(api_key=self.api_key)
 
     def send_message(self, text):
-        try:
-            #20240521: Fix. The append has to be done AFTER the chat method. If we add before the chat method,
-            # the method will fire an error due misaligned human vs. model intercalation.
-            # Pass the conversation history to reka.chat() 
-            response = reka.chat(text, conversation_history=self.conversation_history)
+        #try:
+        #20240521: Fix. The append has to be done AFTER the chat method. If we add before the chat method,
+        # the method will fire an error due misaligned human vs. model intercalation.
+        # Pass the conversation history to reka.chat() 
 
-            # Append the user's message to the conversation history
-            self.conversation_history.append({"type": "human", "text": text})
-            # Append the model's response to the conversation history
-            self.conversation_history.append({"type": "model", "text": response["text"]})
+        # Append the user's message to the conversation history
+        self.conversation_history.append({"role": "user", "content": text})
 
-            Tools.save_conversation(self.conversation_history, self.modelFolder, self.timestamp)
+        response = self.client.chat.create(messages=self.conversation_history,
+                                           model=self.model)
 
-            return self.modelName, response["text"]
-        except Exception as e:
-            raise e
+        # Append the model's response to the conversation history
+        #self.conversation_history.append({"role": "assistant", "content": response["text"]})
+        self.conversation_history.append({"role": "assistant", "content": response.responses[0].message.content})
+
+        Tools.save_conversation(self.conversation_history, self.modelFolder, self.timestamp)
+
+        return self.modelName, response.responses[0].message.content
+        #except Exception as e:
+        #    error_message = "An error happened processing the request:  \n" + str(e)
+        #    return self.modelName, error_message
+            
+
+            
     
     def load_conversation(self, conversation_file):
         fname= os.path.basename(conversation_file)
@@ -56,15 +65,15 @@ class Reka_LLM(LLMBase):
         Tools.print_colored(f"Conversation history Start: {self.timestamp}","black", "green")
         print("\n")
         for entry in self.conversation_history:
-            if entry['type'] == 'human':
+            if entry['role'] == 'user':
                 Tools.print_colored("Your question:","black", "green")
-                print(entry['text'])
-            elif entry['type'] == 'model':
+                print(entry['content'])
+            elif entry['role'] == 'assistant':
                 Tools.print_colored(f"AI answer:", "blue", "white")
                 if LLMBase.USE_MARKDOWN:
                     console =Console()
-                    md = Markdown(entry['text']) # '  \n' two spaces and \n means carriage return
+                    md = Markdown(entry['content']) # '  \n' two spaces and \n means carriage return
                     console.print(md)
                 else:
-                    print(entry['text']) # normal print where '\n' means carriage return  
+                    print(entry['content']) # normal print where '\n' means carriage return  
         Tools.print_colored(f"\nConversation history ended: {self.timestamp}","black", "green")                              

@@ -32,19 +32,25 @@ class OctoAI_LLama3_70_LLM(LLMBase):
     def send_message(self, text):
         # Add the new user message to the conversation history
         self.conversation_history.append(ChatMessage(role="user", content=text))
+        try:
+            response = self.client.text_gen.create_chat_completion(
+            max_tokens=2048,
+            messages=self.conversation_history,
+            model=self.model,
+            presence_penalty=0, temperature=0.1, top_p=0.9 )
 
-        response = self.client.text_gen.create_chat_completion(
-	    max_tokens=2048,
-	    messages=self.conversation_history,
-	    model=self.model,
-	    presence_penalty=0, temperature=0.1, top_p=0.9 )
+            # Add the assistant's response to the conversation history
+            self.conversation_history.append(ChatMessage(role="assistant", content=response.choices[0].message.content))
 
-        # Add the assistant's response to the conversation history
-        self.conversation_history.append(ChatMessage(role="assistant", content=response.choices[0].message.content))
+            Tools.save_conversation(self.conversation_history,self.modelFolder,self.timestamp, Tools.chat_message_encoder)
 
-        Tools.save_conversation(self.conversation_history,self.modelFolder,self.timestamp, Tools.chat_message_encoder)
+            return self.modelName, response.choices[0].message.content
 
-        return self.modelName, response.choices[0].message.content
+        except Exception as e:
+            error_message = "An unexpected error occurred:  \n" + str(e)
+            return self.modelName, error_message
+
+
 
     def load_conversation(self,conversation_file):
         """

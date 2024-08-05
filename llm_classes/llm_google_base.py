@@ -33,18 +33,21 @@ class Google_Gemini_Base(LLMBase):
             {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE", },
             {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE", },
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE", },]
+        try:
+            model = genai.GenerativeModel( model_name=self.model, safety_settings=safety_settings, generation_config=generation_config,)
 
-        model = genai.GenerativeModel( model_name=self.model, safety_settings=safety_settings, generation_config=generation_config,)
+            self.conversation_history.append({"role": "user", "parts": [text + "\n"]})
+            chat_session = model.start_chat(history=self.conversation_history)
+            response = chat_session.send_message(text)
 
-        self.conversation_history.append({"role": "user", "parts": [text + "\n"]})
-        chat_session = model.start_chat(history=self.conversation_history)
-        response = chat_session.send_message(text)
+            # Add LLM response to history
+            self.conversation_history.append({"role": "model", "parts": [response.text]})
 
-        # Add LLM response to history
-        self.conversation_history.append({"role": "model", "parts": [response.text]})
-
-        Tools.save_conversation(self.conversation_history,self.modelFolder,self.timestamp)
-        return self.modelName, response.text
+            Tools.save_conversation(self.conversation_history,self.modelFolder,self.timestamp)
+            return self.modelName, response.text
+        except Exception as e:
+            error_message = "An unexpected error occurred:  \n" + str(e)
+            return self.modelName, error_message
 
 
     def load_conversation(self, conversation_file):
