@@ -15,6 +15,7 @@ MODEL_PATH = 'llm_classes'
 AUTOCHECK_TEST="Round the pi number to the 4th decimal place.Answer in the following format 'Pi rounded is ...'"
 AUTOCHECK_ANSWER="3.141"
 HISTORY_PATH = 'models'
+VERSION = '1.7.5'
 
 #Get the list of classes dynamically
 def load_classes_from_folder(folder_path, include_classes=None):
@@ -101,7 +102,7 @@ def main2():
     # Reads multiple lines from command line, returns entire text in context string.
     print("***************************************************")
     print("* Second Opinion: A simple chatbot for AI models  *")
-    print("* Version 1.7.0                                   *")
+    print(f"* Version {VERSION}                                   *")
     if USE_MARKDOWN:
         print("* Markdown support: ON                            *")
     else:

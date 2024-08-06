@@ -108,7 +108,6 @@ Fireworks_Qwen2_Instruct_CFG = {
     "MODEL_ID": "accounts/fireworks/models/qwen2-72b-instruct",
     "MODEL_FOLDER": "models/fireworks_qwen2_instruct"
 }
-#accounts/fireworks/models/llama-v3-8b-instruct
 
 Fireworks_Llama3_8b_Instruct_CFG = {
     "API_KEY" : "YOUR-API-KEY-HERE",
@@ -117,15 +116,12 @@ Fireworks_Llama3_8b_Instruct_CFG = {
     "MODEL_FOLDER": "models/llama_v3_8b_instruct"
 }
 
-#accounts/fireworks/models/llama-v3p1-70b-instruct
-
 Fireworks_Llama3_1_70b_CFG = {
     "API_KEY" : "YOUR-API-KEY-HERE",
     "MODEL_NAME": "Llama 3.1 70B (fireworks.ai)",
     "MODEL_ID": "accounts/fireworks/models/llama-v3p1-70b-instruct",
     "MODEL_FOLDER": "models/llama_v3_1_70b"
 }
-
 
 Fireworks_Qwen2_Chat_CFG = {
     "API_KEY" : "YOUR-API-KEY-HERE",
@@ -136,12 +132,10 @@ Fireworks_Qwen2_Chat_CFG = {
     "ENABLED_REASON": "Only by demand (GPU use == $$$)"
 }
 
-#accounts/fireworks/models/yi-large
-#accounts/fireworks/models/yi-large
 Fireworks_Yi_Large_CFG={
     "API_KEY" : "YOUR-API-KEY-HERE",
     "MODEL_NAME": "Yi Large (fireworks.ai)",
-    "MODEL_ID": "accounts/fireworks/models/yi-large",
+    "MODEL_ID": "accounts/yi-01-ai/models/yi-large",
     "MODEL_FOLDER": "models/yi_large"
 }
 
@@ -194,7 +188,6 @@ OpenAI_4OMNI_CFG= {
     "MODEL_FOLDER": "models/openai-chatgpt-4_omni"
 }
 
-#gpt-4o-mini
 OpenAI_4O_MINI_CFG= {
     "API_KEY" : "YOUR-API-KEY-HERE",
     "MODEL_NAME": "ChatGPT 4O Mini (OpenAI)",
@@ -214,7 +207,6 @@ Groq_Llama3_CFG = {
     "MODEL_NAME": "Llama 3 (70b) (groq.com)",
     "MODEL_ID": "llama3-70b-8192",
     "MODEL_FOLDER": "models/groq-llama3"
-
 }
 
 Groq_MixtralAL8x7b_CFG = {
@@ -222,14 +214,11 @@ Groq_MixtralAL8x7b_CFG = {
     "MODEL_NAME": "Mistral 8x7b 32kb(groq.com)",
     "MODEL_ID": "mixtral-8x7b-32768",
     "MODEL_FOLDER": "models/groq-mixtral-8x7b"
-
 }
 
-#gemma 2 9b gemma2-9b-it
 Groq_Gemma2_9b_CFG = {
     "API_KEY" : "YOUR-API-KEY-HERE",
     "MODEL_NAME": "Gemma 2 9B 9kb(groq.com)",
     "MODEL_ID": "gemma2-9b-it",
     "MODEL_FOLDER": "models/gemma2-9b"
-
 }
