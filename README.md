@@ -16,11 +16,12 @@ key advantages of Second Opinion:
 ## Watch the full series to install, use & understand what you can do with Second Opinion (for the moment, Spanish only, sorry!)
 
 Installation:
+
  [![#1 - Second Opinion - Installation ](https://www.youtube.com/embed/vY7TTnVR-68?si=sQsjyrzEtOVLjNRJ/maxresdefault.jpg)](https://www.youtube.com/embed/vY7TTnVR-68?si=sQsjyrzEtOVLjNRJ)
  
 [![#2 - Second Opinion - How to use it](https://www.youtube.com/embed/7F2RObg0Hwk?si=09K2sJ9fAr8Iydq2/maxresdefault.jpg)](https://www.youtube.com/embed/7F2RObg0Hwk?si=09K2sJ9fAr8Iydq2)
 
-[![#3 - Second Opinion - Autocheckt](https://www.youtube.com/embed/AeP93DaDRf8?si=OZWgK5sWhnz4ndea/maxresdefault.jpg)](https://www.youtube.com/embed/AeP93DaDRf8?si=OZWgK5sWhnz4ndea)
+[![#3 - Second Opinion - Autocheck](https://www.youtube.com/embed/AeP93DaDRf8?si=OZWgK5sWhnz4ndea/maxresdefault.jpg)](https://www.youtube.com/embed/AeP93DaDRf8?si=OZWgK5sWhnz4ndea)
 
 [![#4 - Second Opinion - Conversation history](https://www.youtube.com/embed/8ZyvJ1bzolU?si=QPJ6y8A9_4o9Rdi3/maxresdefault.jpg)](https://www.youtube.com/embed/8ZyvJ1bzolU?si=QPJ6y8A9_4o9Rdi3)
 
