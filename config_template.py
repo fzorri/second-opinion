@@ -34,21 +34,21 @@ Anthropic_Claude_Opus_CFG = {
     "API_KEY": "YOUR-API-KEY-HERE",
     "MODEL_NAME": "Claude V3 - Opus (Powerful)",
     "MODEL_ID": "claude-3-opus-20240229",
-    "MODEL_FOLDER": "models/anthropic",
+    "MODEL_FOLDER": "models/anthropic-opus",
 }
 
 Anthropic_Claude_Sonnet_CFG = {
     "API_KEY": "YOUR-API-KEY-HERE",
     "MODEL_NAME": "Claude V3 - Sonnet (Balanced)",
     "MODEL_ID": "claude-3-sonnet-20240229",
-    "MODEL_FOLDER": "models/anthropic",
+    "MODEL_FOLDER": "models/anthropic-sonnet,
 }
 
 Anthropic_Claude_Haiku_CFG = {
     "API_KEY": "YOUR-API-KEY-HERE",
     "MODEL_NAME": "Claude V3 - Haiku (Fast)",
     "MODEL_ID": "claude-3-haiku-20240307",
-    "MODEL_FOLDER": "models/anthropic",
+    "MODEL_FOLDER": "models/anthropic-haiku",
 }
 
 Mistral_Largest_CFG ={

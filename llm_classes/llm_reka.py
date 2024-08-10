@@ -1,5 +1,4 @@
 # prerequisite: pip install reka-api
-
 import os
 import json
 from reka.client import Reka
@@ -49,9 +48,7 @@ class Reka_LLM(LLMBase):
         #except Exception as e:
         #    error_message = "An error happened processing the request:  \n" + str(e)
         #    return self.modelName, error_message
-            
-
-            
+  
     
     def load_conversation(self, conversation_file):
         fname= os.path.basename(conversation_file)

@@ -1,17 +1,30 @@
-Introducing Second Opinion - a sleek and user-friendly interface designed for chatting with multiple LLMs. Here are some
+# Second Opinion is a sleek and user-friendly interface designed for chatting with multiple LLMs. Here are some
 key advantages of Second Opinion:
 
- • Lightweight and efficient - the interface is simple and works with all LLMs.
- • Quick and easy switching between LLMs (currently 26, with potential for more).
- • Instant responses from LLMs.
- • Save conversation history locally for easy reference.
- • Pay-as-you-go pricing model for cost savings. Forget about monthly payments (!!!)
- • Easy setup and configuration.
- • Expandable and customizable.
- • Markup text for visually appealing LLM responses.
- • Open Source for transparency and collaboration.
- • No need for high-end hardware - works on low-spec computers.
- • Perfect for on-the-go use with minimal system requirements.
+* Lightweight and efficient - the interface is simple and works with all LLMs.
+* Quick and easy switching between LLMs (currently 26, with potential for more).
+* Instant responses from LLMs.
+* Save conversation history locally for easy reference.
+* Pay-as-you-go pricing model for cost savings. Forget about monthly payments (!!!)
+* Easy setup and configuration.
+* Expandable and customizable.
+* Markup text for visually appealing LLM responses.
+* Open Source for transparency and collaboration.
+* No need for high-end hardware - works on low-spec computers.
+* Perfect for on-the-go use with minimal system requirements.
+
+## Watch the full series to install, use & understand what you can do with Second Opinion (for the moment, Spanish only, sorry!)
+
+Installation:
+<iframe width="560" height="315" src="https://www.youtube.com/embed/vY7TTnVR-68?si=sQsjyrzEtOVLjNRJ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+How to use it:
+<iframe width="560" height="315" src="https://www.youtube.com/embed/7F2RObg0Hwk?si=09K2sJ9fAr8Iydq2" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+Autocheck mode: what it is and what it does?
+<iframe width="560" height="315" src="https://www.youtube.com/embed/AeP93DaDRf8?si=OZWgK5sWhnz4ndea" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+Conversation history:
+<iframe width="560" height="315" src="https://www.youtube.com/embed/8ZyvJ1bzolU?si=QPJ6y8A9_4o9Rdi3" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+Extending the framework:
+<iframe width="560" height="315" src="https://www.youtube.com/embed/5BrzWsQW2aY?si=E_ouUZpBfccQ_AlZ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 
 INSTRUCTIONS:
@@ -22,7 +35,7 @@ Software to install (VERY RECOMMENDED):
 STEPS: 
 
 1- Select a folder to download the code and then
-git clone https://github.com/fzorri/secop.git (or use github desktop to download it)
+git clone https://github.com/fzorri/second-opinion.git (or use github desktop to download it)
 It will create a folder called second-opinion
 
 2- Open a terminal and navigate to the second-opinion folder
