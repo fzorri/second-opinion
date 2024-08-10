@@ -16,16 +16,12 @@ key advantages of Second Opinion:
 ## Watch the full series to install, use & understand what you can do with Second Opinion (for the moment, Spanish only, sorry!)
 
 Installation:
-<iframe width="560" height="315" src="https://www.youtube.com/embed/vY7TTnVR-68?si=sQsjyrzEtOVLjNRJ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-How to use it:
-<iframe width="560" height="315" src="https://www.youtube.com/embed/7F2RObg0Hwk?si=09K2sJ9fAr8Iydq2" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-Autocheck mode: what it is and what it does?
-<iframe width="560" height="315" src="https://www.youtube.com/embed/AeP93DaDRf8?si=OZWgK5sWhnz4ndea" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-Conversation history:
-<iframe width="560" height="315" src="https://www.youtube.com/embed/8ZyvJ1bzolU?si=QPJ6y8A9_4o9Rdi3" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-Extending the framework:
-<iframe width="560" height="315" src="https://www.youtube.com/embed/5BrzWsQW2aY?si=E_ouUZpBfccQ_AlZ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-
+ [![#1 - Second Opinion - Installation ](https://www.youtube.com/embed/vY7TTnVR-68?si=sQsjyrzEtOVLjNRJ/0.jpg)](https://www.youtube.com/embed/vY7TTnVR-68?si=sQsjyrzEtOVLjNRJ)
+ 
+[![#2 - Second Opinion - How to use it](https://www.youtube.com/embed/7F2RObg0Hwk?si=09K2sJ9fAr8Iydq2/0.jpg)](https://www.youtube.com/embed/7F2RObg0Hwk?si=09K2sJ9fAr8Iydq2)
+[![#3 - Second Opinion - Autocheckt](https://www.youtube.com/embed/AeP93DaDRf8?si=OZWgK5sWhnz4ndea/0.jpg)](https://www.youtube.com/embed/AeP93DaDRf8?si=OZWgK5sWhnz4ndea)
+[![#4 - Second Opinion - Conversation history](https://www.youtube.com/embed/8ZyvJ1bzolU?si=QPJ6y8A9_4o9Rdi3/0.jpg)](https://www.youtube.com/embed/8ZyvJ1bzolU?si=QPJ6y8A9_4o9Rdi3)
+[![#5 - Second Opinion - Extending secop](https://www.youtube.com/embed/5BrzWsQW2aY?si=E_ouUZpBfccQ_AlZ/0.jpg)](https://www.youtube.com/embed/5BrzWsQW2aY?si=E_ouUZpBfccQ_AlZ)
 
 INSTRUCTIONS:
 Software to install (VERY RECOMMENDED):
