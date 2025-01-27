@@ -1,5 +1,3 @@
-# another_llm.py
-# prerequisite: pip install openai
 
 import os
 import json
@@ -10,47 +8,42 @@ from tools import Tools
 from rich.console import Console
 from rich.markdown import Markdown
 
-
-class OpenAI_ChatGPT_Base(LLMBase):
-    # Define a default token limit
+class MinimaxLLMBase(LLMBase):
     def __init__(self, config):
-        self.api_key     = config["API_KEY"]      #api_key
-        self.modelName   = config["MODEL_NAME"]   #model_name 
-        self.model       = config["MODEL_ID"]     #model_id
-        self.modelFolder = config["MODEL_FOLDER"] #model_folder 
-        self.modelFolder = config["MAX_TOKENS"] #model_folder 
+        self.api_key     = config["API_KEY"]  # api_key
+        self.modelName   = config["MODEL_NAME"]  # model_name
+        self.model       = config["MODEL_ID"]  # model_id
+        self.modelFolder = config["MODEL_FOLDER"]  # model_folder
         self.max_tokens = config.get("MAX_TOKENS", Tools.DEFAULT_ANSWER_TOKENS) # override max tokens answer for AI using configuration.
         self.conversation_history = []
         self.timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         super().__init__()  # Call the base class constructor
 
-    #this is going to return self.client= MistralClient initialized
     def initialize_client(self):
-        return OpenAI(api_key=self.api_key)        
+        return OpenAI(api_key=self.api_key, base_url="https://api.minimaxi.chat/v1")
 
     def send_message(self, text):
-        # Append the user's message to the conversation history
         self.conversation_history.append({"role": "user", "content": text})
+
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=self.conversation_history,
                 max_tokens=self.max_tokens, 
                 temperature=0.1, 
-                stream=False )
+                stream=False
+            )
 
-            # Append the model's response to the conversation history
-            self.conversation_history.append({"role": "assistant", "content": response.choices[0].message.content
-        })
-
-            Tools.save_conversation(self.conversation_history,self.modelFolder,
-                                    self.timestamp)
+            self.conversation_history.append({"role": "assistant", "content": response.choices[0].message.content})
+            Tools.save_conversation(self.conversation_history, self.modelFolder, self.timestamp)
             return self.modelName, response.choices[0].message.content
-
         except Exception as e:
-            error_message = "An unexpected error occurred:  \n" + str(e)
-            return self.modelName, error_message
-
+             error_message = "An unexpected error occurred:  \n" + str(e)
+             return self.modelName, error_message
+    
+    """
+    load the conversation file and update timestamp properly
+    """
     def load_conversation(self, conversation_file):
         fname= os.path.basename(conversation_file)
         self.timestamp = fname[len('conversation_history_'):-5]
@@ -75,3 +68,7 @@ class OpenAI_ChatGPT_Base(LLMBase):
                 else:
                     print(entry['content']) # normal print where '\n' means carriage return  
         Tools.print_colored(f"\nConversation history ended: {self.timestamp}","black", "green")                              
+        
+
+
+

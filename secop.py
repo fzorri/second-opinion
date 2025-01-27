@@ -119,6 +119,7 @@ def main2():
         models_name=[]
         models_folder=[]
         history=[]
+        current_model=""
         for i,c in enumerate(classes, start=1):
             name = c[:-4] + "_CFG" #get rid of the _LLM suffix and add the _CFG suffix, to obtain the configuration class dictionary name
             cfg = getattr(config,name,None) # look for the configuration class in the config.py file. 
@@ -128,14 +129,21 @@ def main2():
                 enabled = cfg.get("ENABLED") # Check if the model is enabled, absence means enabled
                 enabled = (enabled is None) or bool(enabled) #some type juggling here...
                 enabled_reason=str(cfg.get("ENABLED_REASON"))
+                max_tokens = Tools.DEFAULT_ANSWER_TOKENS
+                if cfg.get("MAX_TOKENS") is not None:
+                    max_tokens = cfg.get("MAX_TOKENS")
+                    max_tokens = Tools.return_string_colored(max_tokens,"white","blue")
+                
                 if enabled_reason is None:
                     enabled_reason = "(no reason)"
                 #compose the model name and find out if it is enabled.
                 if not enabled:
                     model_name = model_name.ljust(MODEL_COLUMN_WIDTH) + " " + Tools.return_string_colored("DISABLED","white","red") + " (" + enabled_reason + ")"
+                else:
+                    model_name = model_name.ljust(MODEL_COLUMN_WIDTH) + f" ({max_tokens} tokens)"
                 models_name.append(model_name)
                 models_folder.append(folder)
-                print(f"{str(i).zfill(2)}: {model_name}") #format the number with 2 digits.
+                print (f"{str(i).zfill(2)}: {model_name}" ) #format the number with 2 digits.
             else:
                 print(f"No configuration found with the name {cfg}")
         print ("\nCOMMANDS\nA: Autocheck: test if all models are working properly")    
@@ -165,7 +173,12 @@ def main2():
             selected_folder = models_folder[choice_num-1] #get the folder where the conversation is stored.
             
             print("\n")
-            Tools.print_colored("Starting conversation with " + models_name[choice_num-1] ,"black", "green")
+            # 20250127: Added how many tokens is using the model to answer.
+            current_model=models_name[choice_num-1]
+            #Tools.print_colored("Starting conversation with " + current_model ,"black", "green")
+            toPrint =f"Chat with {current_model} - Type 'end' in a separate line to end input, Ctl-C to return to the menu"
+            Tools.print_colored(toPrint ,"black", "green")
+
         except KeyboardInterrupt: # Handle Ctrl+C (KeyboardInterrupt) to exit gracefully
             print("\nChoice selection aborted... interrupted. Exiting...")
             return ""
@@ -189,7 +202,7 @@ def main2():
         #Start the conversation        
         while True:
             try:
-                Tools.print_colored("Enter your question, Ctrl-Enter+Enter to end input, Ctl-C to return to the menu","black", "green")
+                Tools.print_colored( current_model+" - Enter your question, type 'end' in a separate line to end input, Ctl-C to return to the menu","black", "green")
                 content = Tools.getInput()
                 model_name, response = llm.get_response(content)
                 Tools.print_colored(f"{model_name} answer:", "blue", "white")
@@ -230,3 +243,11 @@ if __name__ == "__main__":
 # TODO - Add more classes for Google for example
 # TODO - Add more classes for Hugging Face and Endpoints 
 # TODO - unit tests right now. Urgently.
+
+# 20250127 - New feature:We can control how many tokens the model is using to answer. 
+# If the answer is too long , it is cut in half and remaining part of the answer is lost.
+# I've added an additional configuration option, allowing longer answers .
+# I've defined a 1024 tokens as default that covers about 80% to 90% of the cases. 
+# I've changed the menu so we can see how many tokens the model is using to answer, along with enhanced display to easily know in advance sessions lengths.
+        
+

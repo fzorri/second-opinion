@@ -5,6 +5,11 @@ from octoai.text_gen import ChatMessage as OChatMessage
 from pynput.keyboard import Key, Listener
 
 class Tools:
+    #20250127: default given tokens limit when an AI answer. 
+    # 1024 is reasonable nowadays (2024/2025), however if you see long answers incomplete, you need to add the MAX_TOKENS value to the llm configuration
+    # in order to override this value.
+    DEFAULT_ANSWER_TOKENS = 1024
+
     # print in the command line with a colored background and text
     # Example usage
     #print_colored("Hello, World!", "red", "white")

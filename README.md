@@ -13,6 +13,13 @@ key advantages of Second Opinion:
 * No need for high-end hardware - works on low-spec computers.
 * Perfect for on-the-go use with minimal system requirements.
 
+# History
+
+20250119 - Added Minimax class to address the models minimax / Abab 6.5 . Notice that it needs some $$$ to make it work (account starts with U$S25 for API access)
+20250120 - OctoAI is retired since the company joined Nvidia.
+         - Few LLM were discarded to keep the most important.
+         - Changed LLama 3.1 by 3.3 in Groq collection
+
 ## Watch the full series to install, use & understand what you can do with Second Opinion (for the moment, Spanish only, sorry!)
 
 Installation:

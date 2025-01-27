@@ -13,11 +13,12 @@ class Fireworks_Mistral_8x22_LLM(Fireworks_Base):
         super().__init__(Fireworks_Mistral_8x22_CFG)
 
 
-from config import Fireworks_Qwen2_Chat_CFG
-
-class Fireworks_Qwen2_Chat_LLM(Fireworks_Base):
-    def __init__(self):
-        super().__init__(Fireworks_Qwen2_Chat_CFG)   
+#discarded
+#from config import Fireworks_Qwen2_Chat_CFG
+#
+#class Fireworks_Qwen2_Chat_LLM(Fireworks_Base):
+#    def __init__(self):
+#        super().__init__(Fireworks_Qwen2_Chat_CFG)   
 
 
 from config import Fireworks_Qwen2_Instruct_CFG
@@ -44,3 +45,8 @@ class Fireworks_Llama3_1_70b_LLM(Fireworks_Base):
     def __init__(self):
         super().__init__(Fireworks_Llama3_1_70b_CFG)
 
+from config import Fireworks_Llama_3_2_90B_CFG
+
+class Fireworks_Llama_3_2_90B_LLM(Fireworks_Base):
+    def __init__(self):
+        super().__init__(Fireworks_Llama_3_2_90B_CFG)

@@ -195,6 +195,13 @@ OpenAI_4O_MINI_CFG= {
     "MODEL_FOLDER": "models/openai-chatgpt-4o-mini"
 }
 
+OpenAI_o1_preview_CFG= {
+    "API_KEY" : "YOUR-API-KEY-HERE",
+    "MODEL_NAME": "Orion 1 Preview (OpenAI)",
+    "MODEL_ID": "o1-preview",
+    "MODEL_FOLDER": "models/openai-o1-preview"
+}
+
 Reka_CFG = {
     "API_KEY" : "YOUR-API-KEY-HERE",
     "MODEL_NAME": "Reka",

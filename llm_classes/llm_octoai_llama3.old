@@ -2,7 +2,7 @@
 # Warning: correct declaration can be found in 
 #https://octo.ai/docs/text-gen-solution/python-sdk
 #prerequisite: pip install octoai
-
+# 20250120 : Deprecated, OctoAI was acquired by NVIDIA
 import os
 import json
 from octoai.text_gen import ChatMessage

@@ -18,7 +18,7 @@ class Groq_Gemma2_9b_LLM(Groq_Base):
     def __init__(self):
         super().__init__(Groq_Gemma2_9b_CFG)
 
-from config import Groq_Llama318b_CFG
-class Groq_Llama318b_LLM(Groq_Base):
+from config import Groq_Llama33_70b_CFG
+class Groq_Llama33_70b_LLM(Groq_Base):
     def __init__(self):
-        super().__init__(Groq_Llama318b_CFG)
+        super().__init__(Groq_Llama33_70b_CFG)
