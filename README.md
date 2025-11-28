@@ -14,7 +14,7 @@ key advantages of Second Opinion:
 * Perfect for on-the-go use with minimal system requirements.
 
 # History
-
+20250919 - keys are in one .env file without repetition.
 20250119 - Added Minimax class to address the models minimax / Abab 6.5 . Notice that it needs some $$$ to make it work (account starts with U$S25 for API access)
 20250120 - OctoAI is retired since the company joined Nvidia.
          - Few LLM were discarded to keep the most important.
@@ -56,10 +56,26 @@ conda activate secop
 pip install -r requirements.txt
 
 
-6 - Copy the config template  to config.py . This file is never overwritten if you update the software.
-copy config_template.py config.py (windows) | cp config_template.py config.py (linux o mac)
+6 - **Set up your API Keys (Secrets):**
+   - Copy the new `.env.template` file to a file named `.env`. This file will hold all your secret API keys and is ignored by Git.
+     ```shell
+     # On Windows
+     copy .env.template .env
 
-7 - get some api keys from the companies you want (see config_template.py info) and complete config.py. The file is self explanatory and very simple.
+     # On Linux or macOS
+     cp .env.template .env
+     ```
+   - Open the `.env` file and fill in your API keys for the services you want to use.
+
+7 - **Set up the Configuration:**
+   - Copy the `config_template.py` file to `config.py`. You generally won't need to edit this file anymore, as it now reads the API keys automatically from your `.env` file.
+     ```shell
+     # On Windows
+     copy config_template.py config.py
+
+     # On Linux or macOS
+     cp config_template.py config.py
+     ```
 
 Running Second Opinion
 

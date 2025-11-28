@@ -2,60 +2,84 @@ import os
 import json
 from mistralai.models.chat_completion import ChatMessage as MChatMessage
 from octoai.text_gen import ChatMessage as OChatMessage
-from pynput.keyboard import Key, Listener
+
+# Imports for the modern, editable multi-line input
+from prompt_toolkit import prompt
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.keys import Keys
 
 class Tools:
-    #20250127: default given tokens limit when an AI answer. 
-    # 1024 is reasonable nowadays (2024/2025), however if you see long answers incomplete, you need to add the MAX_TOKENS value to the llm configuration
-    # in order to override this value.
-    DEFAULT_ANSWER_TOKENS = 1024
+    DEFAULT_ANSWER_TOKENS = 4096
+    DEFAULT_TEMPERATURE   = 0.1
 
-    # print in the command line with a colored background and text
-    # Example usage
-    #print_colored("Hello, World!", "red", "white")
-    #print_colored("This is a warning!", "yellow", "black")
-    #print_colored("Success message", "green", "black")
-
+    @staticmethod
     def print_colored(text, color, background):
         print(Tools.return_string_colored(text,color,background))
 
+    @staticmethod
     def return_string_colored(text,color,background):
         color_codes = {'black': '30','red': '31','green': '32','yellow': '33','blue': '34','magenta': '35','cyan': '36', 'white': '37'    }
         background_codes = { 'black': '40','red': '41', 'green': '42', 'yellow': '43','blue': '44', 'magenta': '45', 'cyan': '46', 'white': '47' }
-        color_code = color_codes.get(color.lower(), '37')  # Default to white if color not found
-        background_code = background_codes.get(background.lower(), '40')  # Default to black if background not found
+        color_code = color_codes.get(color.lower(), '37')
+        background_code = background_codes.get(background.lower(), '40')
         return f"\033[{color_code};{background_code}m{text}\033[0m"
 
-    # read multiples lines directly from command line.
-
+    @staticmethod
     def getInput():
-        lines = []
+        """
+        Reads multiple lines from the console using prompt_toolkit, allowing full editing.
+        This version uses the correct key bindings based on official documentation.
+        
+        - Pressing Ctrl+J (the code for Ctrl+Enter on most terminals) will submit.
+        - Pressing Ctrl+D is a universal fallback for submission.
+        - Pressing the normal Enter key will add a new line.
+        - Pressing Ctrl+C will abort the input.
+        """
+        bindings = KeyBindings()
+
+        # Define a single handler function for submitting the input.
+        def _submit_handler(event):
+            """Exits the prompt, returning the buffer's content."""
+            event.app.exit(result=event.app.current_buffer.text)
+
+        # Bind the correct keys to the submit handler.
+        # We use Keys.ControlJ because this is the key code most terminals
+        # send for Ctrl+Enter.
+        bindings.add(Keys.ControlJ)(_submit_handler)
+
+        # We keep Keys.ControlD as a reliable, universal fallback.
+        bindings.add(Keys.ControlD)(_submit_handler)
+        
+        #
+        # --- IMPORTANT ---
+        # We DO NOT bind Keys.ControlM (Enter). By not binding it, we allow
+        # prompt_toolkit's default behavior for multi-line input, which is to
+        # insert a newline. This is what allows you to type multiple lines.
+        #
+        
         try:
-            while True:
-                line = input()
-                if line.upper()=="END":
-                    print("\n(End) Processing...") #input is interruptible if we enter end
-                    break
-                lines.append(line)  # Strip newline from non-empty lines
+            # Updated toolbar to reflect the working keys.
+            toolbar_text = 'Press [Ctrl+Enter] (or Ctrl+J) or [Ctrl+D] to submit | [Ctrl+C] to abort'
 
-        except KeyboardInterrupt : # Handle Ctrl+C (KeyboardInterrupt) to exit gracefully
-            print("\nCtl-C detected. Processing...") #input is INTERRUPTIBLE with Control-Z
+            text_block = prompt(
+                '> ',
+                multiline=True,
+                key_bindings=bindings,
+                bottom_toolbar=toolbar_text,
+                prompt_continuation='  ' 
+            )
+            print("\n(End) Processing...")
+            return text_block
+
+        except KeyboardInterrupt:
+            print("\nCtl-C detected. Returning to the menu...")
             raise KeyboardInterrupt
-
         except EOFError:
-            print("\nCtl-Z detected. Processing...") #input is INTERRUPTIBLE with Control-Z but it does not work for Mac.
-            raise KeyboardInterrupt
-
-        answer=""
-        for line in lines:
-            answer = answer + line + "\n"
-        return answer
+            print("\nInput ended. Processing...")
+            return ""
 
     @staticmethod
     def chat_message_encoder(obj):
-        """
-        Custom JSON encoder for the ChatMessage object.
-        """
         if isinstance(obj, (MChatMessage, OChatMessage)):
             return {
                 "role": obj.role,
@@ -65,16 +89,11 @@ class Tools:
 
     @staticmethod
     def save_conversation(conversation_history,folder,timestamp,encoder = None):
-        """
-        Save the conversation history to a JSON file.
-        """
-        # Save the conversation history to a file in the specific folder completely.
-        os.makedirs(folder, exist_ok=True)  # Create the directory if it doesn't exist
+        os.makedirs(folder, exist_ok=True)
         filename = os.path.join(folder, f"conversation_history_{timestamp}.json")
         if encoder is None:
             with open(filename, "w") as file:
                 json.dump(conversation_history, file, indent=4)         
         else:
             with open(filename, "w") as file:
-                json.dump(conversation_history, file, indent=4,default=encoder)         
-
+                json.dump(conversation_history, file, indent=4,default=encoder)

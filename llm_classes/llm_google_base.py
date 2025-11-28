@@ -3,6 +3,7 @@
 # that gemini llm provides (No candidates, no asychronic, etc.)
 # This is a FIRST iteration.
 # prerequisite: pip install -q -U google-generativeai
+# Models: https://ai.google.dev/gemini-api/docs/models
 
 import os
 import json

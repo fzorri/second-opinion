@@ -1,5 +1,6 @@
 # another_llm.py
 # prerequisite: pip install openai
+# 20250501: the parameter max_completion_tokens have changed to max tokens without warning
 
 import os
 import json
@@ -18,8 +19,8 @@ class OpenAI_ChatGPT_Base(LLMBase):
         self.modelName   = config["MODEL_NAME"]   #model_name 
         self.model       = config["MODEL_ID"]     #model_id
         self.modelFolder = config["MODEL_FOLDER"] #model_folder 
-        self.modelFolder = config["MAX_TOKENS"] #model_folder 
         self.max_tokens = config.get("MAX_TOKENS", Tools.DEFAULT_ANSWER_TOKENS) # override max tokens answer for AI using configuration.
+        self.temperature= config.get("TEMPERATURE", Tools.DEFAULT_TEMPERATURE) 
         self.conversation_history = []
         self.timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         super().__init__()  # Call the base class constructor
@@ -30,13 +31,14 @@ class OpenAI_ChatGPT_Base(LLMBase):
 
     def send_message(self, text):
         # Append the user's message to the conversation history
+        # max_tokens=self.max_tokens, 
         self.conversation_history.append({"role": "user", "content": text})
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=self.conversation_history,
-                max_tokens=self.max_tokens, 
-                temperature=0.1, 
+                max_tokens =self.max_tokens,
+                temperature=self.temperature, 
                 stream=False )
 
             # Append the model's response to the conversation history

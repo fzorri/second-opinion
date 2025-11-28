@@ -1,3 +1,4 @@
+from halo import Halo
 import os
 from history import History
 import importlib
@@ -176,7 +177,7 @@ def main2():
             # 20250127: Added how many tokens is using the model to answer.
             current_model=models_name[choice_num-1]
             #Tools.print_colored("Starting conversation with " + current_model ,"black", "green")
-            toPrint =f"Chat with {current_model} - Type 'end' in a separate line to end input, Ctl-C to return to the menu"
+            toPrint =f"Chat with {current_model} - Type 'end' or '*' in a new line to finalize, Ctl-C to return to the menu"
             Tools.print_colored(toPrint ,"black", "green")
 
         except KeyboardInterrupt: # Handle Ctrl+C (KeyboardInterrupt) to exit gracefully
@@ -204,7 +205,12 @@ def main2():
             try:
                 Tools.print_colored( current_model+" - Enter your question, type 'end' in a separate line to end input, Ctl-C to return to the menu","black", "green")
                 content = Tools.getInput()
-                model_name, response = llm.get_response(content)
+                # Use the spinner as a context manager
+                spinner = Halo(text=f'Waiting for {llm.modelName}...', spinner='dots')
+                with spinner:
+                    # This network call happens while the spinner is running
+                    model_name, response = llm.get_response(content)
+        
                 Tools.print_colored(f"{model_name} answer:", "blue", "white")
                 if USE_MARKDOWN:
                     console =Console()

@@ -4,8 +4,13 @@
 #     https://www.atlassian.com/git/tutorials/saving-changes/gitignore
 
 # Node artifact files
+
+# python cache.
+_pycache_/
 node_modules/
 dist/
+# belongs to the AI environment
+AI/ 
 
 #Second-Opinion models: This is the conversation history
 #This is going outside the code, although Dropbox duplicates conversations (!)
@@ -14,7 +19,7 @@ models/
 test/
 
 #your api keys shouldn't be imported into the project!
-config.py
+.env
 
 # Compiled Java class files
 *.class
@@ -57,3 +62,4 @@ Thumbs.db
 *.mov
 *.wmv
 
+tools.old

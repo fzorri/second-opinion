@@ -186,12 +186,14 @@ class History:
                 if len(valid_indices) == 1:
                     filepath= os.path.join(self.folder_path, json_files[valid_indices[0] - 1])
                     print (f"file to operate: {filepath}")
-                    choice = input("Options: (V)iew, (S)elect or (Delete) conversation (0 to abort):")
+                    choice = input("Options: (V)iew, (S)elect, (E)xport to Markdown or (D)elete conversation (0 to abort):")
                     #Assembly the complete folder to access the conversation
                     if choice == "Delete": #Need to type exactly 'Delete' to avoid mistakes.
                         self.delete_conversation(filepath)
                     elif choice.upper() == "V":
                         self.print_conversation(filepath)
+                    elif choice.upper() == "E":
+                        self.export_to_markdown(filepath)
                     elif choice.upper() == "S":
                         return filepath #return with a conversation to continue the dialog.
                     elif choice == "0":
@@ -241,6 +243,36 @@ class History:
                     console.print(md)
                 else:
                     print(entry['content']) # normal print where '\n' means carriage return
+
+    def export_to_markdown(self, file_path):
+        """
+        Exports a conversation from a JSON file to a Markdown file.
+        """
+        try:
+            with open(file_path, 'r') as file:
+                data = json.load(file)
+
+            markdown_content = []
+            for entry in data:
+                if entry['role'] == 'user':
+                    markdown_content.append(f"**User:**\n{entry['content']}\n")
+                elif entry['role'] == 'assistant':
+                    markdown_content.append(f"**Assistant:**\n{entry['content']}\n")
+
+            markdown_output = "\n".join(markdown_content)
+            output_filepath = os.path.splitext(file_path)[0] + '.md'
+
+            with open(output_filepath, 'w', encoding='utf-8') as md_file:
+                md_file.write(markdown_output)
+
+            print(f"Successfully exported conversation to {output_filepath}")
+
+        except FileNotFoundError:
+            print(f"Error: File not found at {file_path}")
+        except json.JSONDecodeError:
+            print(f"Error: Invalid JSON in {file_path}")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
 
 
  # Example usage:

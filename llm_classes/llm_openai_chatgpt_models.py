@@ -2,7 +2,7 @@
 # prerequisite: pip install openai
 
 from llm_classes.llm_openai_chatgpt_base import OpenAI_ChatGPT_Base
-from config import OpenAI_35_TURBO_CFG, OpenAI_4TURBO_CFG, OpenAI_4OMNI_CFG, OpenAI_4O_MINI_CFG, OpenAI_o1_preview_CFG
+from config import OpenAI_35_TURBO_CFG, OpenAI_4TURBO_CFG, OpenAI_4OMNI_CFG, OpenAI_4O_MINI_CFG #, OpenAI_o1_preview_CFG, OpenAI_o3_mini_CFG
 class OpenAI_35_TURBO_LLM(OpenAI_ChatGPT_Base):
     def __init__(self):
         super().__init__(OpenAI_35_TURBO_CFG)
@@ -23,8 +23,15 @@ class OpenAI_4O_MINI_LLM(OpenAI_ChatGPT_Base):
     def __init__(self):
         super().__init__(OpenAI_4O_MINI_CFG)
 
-
+'''
+#excluded- They have an issue using max_completion_tokens instead of max_tokens and I seldom use it
 class OpenAI_o1_preview_LLM(OpenAI_ChatGPT_Base):
     def __init__(self):
         super().__init__(OpenAI_o1_preview_CFG)
 
+
+class OpenAI_o3_mini_LLM(OpenAI_ChatGPT_Base):
+    def __init__(self):
+        super().__init__(OpenAI_o3_mini_CFG)
+'''
+#OpenAI_o3_mini_CFG

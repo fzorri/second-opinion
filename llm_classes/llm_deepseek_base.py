@@ -1,4 +1,6 @@
 
+# https://api-docs.deepseek.com/quick_start/pricing
+
 import os
 import json
 from openai import OpenAI

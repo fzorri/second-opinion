@@ -8,24 +8,36 @@
 import google.generativeai as genai
 from llm_classes.llm_base import LLMBase
 from llm_classes.llm_google_base import Google_Gemini_Base
-from config import Gemini_Flash_1_5_CFG
 
-class Gemini_Flash_1_5_LLM(Google_Gemini_Base):
+from config import Gemini_Pro_2_5_CFG
 
-    def __init__(self):
-        super().__init__(Gemini_Flash_1_5_CFG)
-
-from config import Gemini_Pro_1_5_CFG
-
-class Gemini_Pro_1_5_LLM(Google_Gemini_Base):
+class Gemini_Pro_2_5_LLM(Google_Gemini_Base):
 
     def __init__(self):
-        super().__init__(Gemini_Pro_1_5_CFG)    
+        super().__init__(Gemini_Pro_2_5_CFG)    
+
+from config import Gemini_Flash_2_5_CFG
+
+class Gemini_Flash_2_5_LLM(Google_Gemini_Base):
+
+    def __init__(self):
+        super().__init__(Gemini_Flash_2_5_CFG)
+
+# Gemini_Pro_3_Preview_CFG
+
+from config import Gemini_Pro_3_Preview_CFG
+class Gemini_Pro_3_Preview_LLM(Google_Gemini_Base):
+
+    def __init__(self):
+        super().__init__(Gemini_Pro_3_Preview_CFG)    
 
 
+
+'''
 from config import Gemini_Gemma2_2b_CFG
 
 class Gemini_Gemma2_2b_LLM(Google_Gemini_Base):
 
     def __init__(self):
         super().__init__(Gemini_Gemma2_2b_CFG)    
+'''

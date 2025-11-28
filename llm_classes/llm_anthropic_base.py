@@ -13,7 +13,6 @@ from rich.console import Console
 from rich.markdown import Markdown
 
 class Anthropic_Claude_Base(LLMBase):
-
     def __init__(self, config):
         self.api_key     = config["API_KEY"]  # api_key
         self.modelName   = config["MODEL_NAME"]  # model_name
@@ -51,7 +50,7 @@ class Anthropic_Claude_Base(LLMBase):
         except Exception as e:
              error_message = "An unexpected error occurred:  \n" +  str(e)
              return self.modelName, error_message
-    
+   
     """
     load the conversation file and update timestamp properly
     """
@@ -61,7 +60,7 @@ class Anthropic_Claude_Base(LLMBase):
         with open(conversation_file, 'r') as ch:
             self.conversation_history=json.load(ch)
 
-def print_conversation(self,file_path):
+    def print_conversation(self,file_path):
         os.system("cls")
         self.load_conversation(file_path)
         Tools.print_colored(f"Conversation history Start: {self.timestamp}","black", "green")

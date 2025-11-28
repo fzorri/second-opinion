@@ -8,7 +8,7 @@ from tools import Tools
 from rich.console import Console
 from rich.markdown import Markdown
 
-class MinimaxLLMBase(LLMBase):
+class Xai_Base(LLMBase):
     def __init__(self, config):
         self.api_key     = config["API_KEY"]  # api_key
         self.modelName   = config["MODEL_NAME"]  # model_name
@@ -20,7 +20,7 @@ class MinimaxLLMBase(LLMBase):
         super().__init__()  # Call the base class constructor
 
     def initialize_client(self):
-        return OpenAI(api_key=self.api_key, base_url="https://api.minimaxi.chat/v1")
+        return OpenAI(api_key=self.api_key, base_url="https://api.x.ai/v1")
 
     def send_message(self, text):
         self.conversation_history.append({"role": "user", "content": text})
