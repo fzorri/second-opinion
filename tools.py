@@ -8,9 +8,15 @@ from prompt_toolkit import prompt
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.keys import Keys
 
+# Optionally let's add markdown support
+from rich.console import Console
+from rich.markdown import Markdown
+
+
 class Tools:
     DEFAULT_ANSWER_TOKENS = 4096
     DEFAULT_TEMPERATURE   = 0.1
+    USE_MARKDOWN = True
 
     @staticmethod
     def print_colored(text, color, background):
@@ -97,3 +103,32 @@ class Tools:
         else:
             with open(filename, "w") as file:
                 json.dump(conversation_history, file, indent=4,default=encoder)
+    
+    @staticmethod
+    def print_conversation(conversation_file, llm_model_name):
+        os.system("cls" if os.name == "nt" else "clear")
+        
+        fname= os.path.basename(conversation_file)
+        timestamp = fname[len('conversation_history_'):-5]
+
+        with open(conversation_file, 'r') as ch:
+            conversation_history = json.load(ch)
+
+        Tools.print_colored(f"Conversation history Start: {timestamp} with {llm_model_name}","black", "green")
+        print("\n")
+        for entry in conversation_history:
+            role = entry['role']
+            content = entry['content']
+            
+            if role == 'user':
+                Tools.print_colored("Your question:","black", "green")
+                print(content)
+            elif role == 'assistant' or role == 'model': # Google uses 'model' role
+                Tools.print_colored(f"{llm_model_name} answer:", "blue", "white")
+                if Tools.USE_MARKDOWN:
+                    console = Console()
+                    md = Markdown(content)
+                    console.print(md)
+                else:
+                    print(content)
+        Tools.print_colored(f"\nConversation history ended: {timestamp}","black", "green")

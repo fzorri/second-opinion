@@ -1,45 +1,21 @@
-from halo import Halo
 import os
-from history import History
 import importlib
-from tools import Tools
-import json
-import config
-
-# Optionally let's add markdown support
+import sys
+from halo import Halo
 from rich.console import Console
 from rich.markdown import Markdown
+sys.path.append(os.path.dirname(__file__))
+from history import History
+from tools import Tools
+import json
+from config import MODELS_CONFIGURATION
 
-USE_MARKDOWN = True
 MODEL_COLUMN_WIDTH = 38
 MODEL_PATH = 'llm_classes'
 AUTOCHECK_TEST="Round the pi number to the 4th decimal place.Answer in the following format 'Pi rounded is ...'"
 AUTOCHECK_ANSWER="3.141"
 HISTORY_PATH = 'models'
 VERSION = '1.7.5'
-
-#Get the list of classes dynamically
-def load_classes_from_folder(folder_path, include_classes=None):
-    if include_classes is None:
-        include_classes = []
-    classes = {}
-    for file_name in os.listdir(folder_path):
-        if not file_name.endswith('.py'): #exclude non .py files
-            continue
-        if file_name.startswith('__'): #exclude __init__.py (if there is one)
-            continue
-        module_name = file_name[:-3]  # remove the .py extension
-        module = importlib.import_module(folder_path  + '.' + module_name)
-        for attr_name in dir(module):
-            if not any(
-                attr_name.endswith(include[1:]) if include.startswith('*') else attr_name == include
-                for include in include_classes
-            ):
-                continue  # skip the class if it ends with any of the excluded patterns or is exactly the excluded  name
-            attr = getattr(module, attr_name)
-            if isinstance(attr, type):  # check if the attribute is a class
-                classes[attr_name] = attr
-    return classes
 
 #set proxy if is needed
 def check_proxy():
@@ -61,199 +37,187 @@ V2: disabled options (ENABLED=false) are ignored
 
 def autocheck():
     print("Autocheck. Checking models...(WARNING: some models could take a while if there is an error)")
-    #Load classes dinamically, In short, load classes with _LLM suffix
-    classes = load_classes_from_folder(MODEL_PATH, ['*_LLM'] )
-
-    #Iterate over every model
-    models_name=[]
-    for i,c in enumerate(classes, start=1):
-        try:
-            name = c[:-4] + "_CFG" #get rid of the _LLM suffix and add the _CFG suffix, to obtain the configuration class dictionary name
-            cfg = getattr(config,name,None) # look for the configuration class in the config.py file. 
-            if cfg:
-                model_name = cfg.get("MODEL_NAME") #list model name for every class. This trick avoid instancing the classes only to see the description.
-                enabled = cfg.get("ENABLED")       #check if enabled in order to test it. By default all models are enabled unless explicitly disabled
-                enabled = (enabled is None) or bool(enabled) #some type juggling here...
-                enabled_reason = str(cfg.get("ENABLED_REASON")) or "(no reason)"
-
-                #Select and instantiate class model
-                if enabled:
-                    selected_model = list(classes.values())[i - 1]
-                    llm = selected_model()
-                    content =AUTOCHECK_TEST
-                    mname,response = llm.get_response(content)
-                    pi_found=response.find(AUTOCHECK_ANSWER)
-                    model_name=model_name.ljust(MODEL_COLUMN_WIDTH) #justify name to the right in order to get a nice table
-                    if pi_found>0:
-                        result=Tools.return_string_colored(f"OK!!", "white", "green")
-                        print(f"{str(i).zfill(2)}: {model_name} : ", result)
+    
+    loaded_llms = []
+    for provider_name, provider_data in MODELS_CONFIGURATION.get("providers", {}).items():
+        provider_class_name = provider_data.get("class")
+        module_name = provider_data.get("module")
+        if provider_class_name and module_name:
+            try:
+                module = importlib.import_module(module_name)
+                llm_class = getattr(module, provider_class_name)
+                
+                for model_config in provider_data.get("models", []):
+                    model_config["API_KEY"] = provider_data.get("API_KEY")
+                    if model_config.get("enabled", True):
+                        llm_instance = llm_class(model_config)
+                        loaded_llms.append(llm_instance)
                     else:
-                        result=Tools.return_string_colored(f"FAIL", "white", "red")
-                        print(f"{str(i).zfill(2)}: {model_name} : ", result)
-                        print(response)
-                else:
-                    print("Skipping", model_name, "because", enabled_reason)
+                        print(f"Skipping disabled model: {model_config.get('model_name')} because {model_config.get('enabled_reason', '(no reason)')}")
+            except Exception as e:
+                print(f"Error loading provider {provider_name}: {e}")
+                
+    if not loaded_llms:
+        print("No enabled models found for autocheck.")
+        return
+
+    for i, llm in enumerate(loaded_llms, start=1):
+        try:
+            model_name = llm.model_name.ljust(MODEL_COLUMN_WIDTH)
+            content = AUTOCHECK_TEST
+            mname, response = llm.get_response(content)
+            pi_found = response.find(AUTOCHECK_ANSWER)
+            
+            if pi_found > -1: # Use -1 instead of 0 to check if substring is found anywhere
+                result = Tools.return_string_colored("OK!!", "white", "green")
+                print(f"{str(i).zfill(2)}: {model_name} : ", result)
             else:
-                print(f"No configuration found with the name {cfg},{name}")
-        except KeyboardInterrupt: # Handle Ctrl+C (KeyboardInterrupt) to exit gracefully
+                result = Tools.return_string_colored("FAIL", "white", "red")
+                print(f"{str(i).zfill(2)}: {model_name} : ", result)
+                print(f"Response: {response}")
+        except KeyboardInterrupt:
             print("\nAutocheck process interrupted. Exiting...")
-            return ""                
+            return ""
+        except Exception as e:
+            model_name = llm.model_name.ljust(MODEL_COLUMN_WIDTH)
+            result = Tools.return_string_colored("ERROR", "white", "red")
+            print(f"{str(i).zfill(2)}: {model_name} : ", result)
+            print(f"Error details: {e}")
+                
 def main2():
     check_proxy()
-    # Reads multiple lines from command line, returns entire text in context string.
     print("***************************************************")
     print("* Second Opinion: A simple chatbot for AI models  *")
     print(f"* Version {VERSION}                                   *")
-    if USE_MARKDOWN:
+    if Tools.USE_MARKDOWN:
         print("* Markdown support: ON                            *")
     else:
         print("* Markdown support: OFF                          *")
     print("***************************************************")
     print()
 
-    #Load classes dinamically, In short, load classes with _LLM suffix
-    classes = load_classes_from_folder(MODEL_PATH, ['*_LLM'] )
-
-    #Enumerate the classes and list them in the console with their number, so we can select a class easily
-    # VERY IMPORTANT: Every class configuration has the same suffix style, but ending in _CFG.
     while True: 
-        models_name=[]
-        models_folder=[]
-        history=[]
-        current_model=""
-        for i,c in enumerate(classes, start=1):
-            name = c[:-4] + "_CFG" #get rid of the _LLM suffix and add the _CFG suffix, to obtain the configuration class dictionary name
-            cfg = getattr(config,name,None) # look for the configuration class in the config.py file. 
-            if cfg:
-                model_name = cfg.get("MODEL_NAME") #list model name for every class. This trick avoid instancing the classes only to see the description.
-                folder = cfg.get("MODEL_FOLDER")
-                enabled = cfg.get("ENABLED") # Check if the model is enabled, absence means enabled
-                enabled = (enabled is None) or bool(enabled) #some type juggling here...
-                enabled_reason=str(cfg.get("ENABLED_REASON"))
-                max_tokens = Tools.DEFAULT_ANSWER_TOKENS
-                if cfg.get("MAX_TOKENS") is not None:
-                    max_tokens = cfg.get("MAX_TOKENS")
-                    max_tokens = Tools.return_string_colored(max_tokens,"white","blue")
+        all_models_info = []
+        # This first loop just gathers model configurations and class info without instantiating them.
+        for provider_name, provider_data in MODELS_CONFIGURATION.get("providers", {}).items():
+            provider_class_name = provider_data.get("class")
+            module_name = provider_data.get("module")
+            if not (provider_class_name and module_name):
+                continue
+            
+            try:
+                module = importlib.import_module(module_name)
+                llm_class = getattr(module, provider_class_name)
                 
-                if enabled_reason is None:
-                    enabled_reason = "(no reason)"
-                #compose the model name and find out if it is enabled.
-                if not enabled:
-                    model_name = model_name.ljust(MODEL_COLUMN_WIDTH) + " " + Tools.return_string_colored("DISABLED","white","red") + " (" + enabled_reason + ")"
-                else:
-                    model_name = model_name.ljust(MODEL_COLUMN_WIDTH) + f" ({max_tokens} tokens)"
-                models_name.append(model_name)
-                models_folder.append(folder)
-                print (f"{str(i).zfill(2)}: {model_name}" ) #format the number with 2 digits.
-            else:
-                print(f"No configuration found with the name {cfg}")
+                for model_config in provider_data.get("models", []):
+                    model_config["API_KEY"] = provider_data.get("API_KEY")
+                    
+                    model_info = {
+                        "is_enabled": model_config.get("enabled", True),
+                        "llm_class": llm_class,
+                        "model_config": model_config
+                    }
+                    
+                    display_name = model_config.get('model_name', 'Unknown Model').ljust(MODEL_COLUMN_WIDTH)
+
+                    if model_info["is_enabled"]:
+                        max_tokens_info = ""
+                        if model_config.get("max_tokens") is not None:
+                            max_tokens_info = Tools.return_string_colored(str(model_config.get("max_tokens")), "white", "blue")
+                            max_tokens_info = f" ({max_tokens_info} tokens)"
+                        display_name += max_tokens_info
+                    else:
+                        reason = model_config.get('enabled_reason', '(no reason)')
+                        display_name += f" {Tools.return_string_colored('DISABLED','white','red')} ({reason})"
+
+                    model_info["display_name"] = display_name
+                    all_models_info.append(model_info)
+
+            except Exception as e:
+                print(f"Error loading model configurations for provider {provider_name}: {e}")
+
+        if not all_models_info:
+            print("No models configured. Please check models.yaml and your .env file.")
+            return
+
+        for i, model_info in enumerate(all_models_info, start=1):
+            print(f"{str(i).zfill(2)}: {model_info['display_name']}")
+        
         print ("\nCOMMANDS\nA: Autocheck: test if all models are working properly")    
         try:
-            #Allow to choose the model
             while True:
                 try:
                     choice = input("Select A, Model# or 0 to abort:")
-                    #check if autocheck is required
                     if choice.upper() == "A":
                         autocheck()
                         continue
                     choice_num = int(choice)
                     if choice_num == 0:
                         return ""
-                    if 1 <= choice_num <= len(classes):
+                    if 1 <= choice_num <= len(all_models_info):
                         break
                     else:
                         print("Invalid choice")
                         continue
-                except ValueError as e: #check if invalid value is added
+                except ValueError as e:
                         print(f"Invalid choice: {e.args[0]}")
                         continue
             
-            #Pick the appropriate class and instantiate it
-            selected_model = list(classes.values())[choice_num - 1]
-            selected_folder = models_folder[choice_num-1] #get the folder where the conversation is stored.
+            selected_model_info = all_models_info[choice_num - 1]
+            if not selected_model_info["is_enabled"]:
+                print("The selected model is disabled. Please choose another one.\n")
+                continue
+            
+            # LAZY LOADING: Instantiate the LLM class only AFTER the user has made a valid choice.
+            spinner = Halo(text='Initializing model...', spinner='dots')
+            with spinner:
+                llm_class = selected_model_info['llm_class']
+                model_config = selected_model_info['model_config']
+                selected_llm = llm_class(model_config)
             
             print("\n")
-            # 20250127: Added how many tokens is using the model to answer.
-            current_model=models_name[choice_num-1]
-            #Tools.print_colored("Starting conversation with " + current_model ,"black", "green")
-            toPrint =f"Chat with {current_model} - Type 'end' or '*' in a new line to finalize, Ctl-C to return to the menu"
+            toPrint =f"Chat with {selected_llm.model_name} - Type 'end' or '*' in a new line to finalize, Ctl-C to return to the menu"
             Tools.print_colored(toPrint ,"black", "green")
 
-        except KeyboardInterrupt: # Handle Ctrl+C (KeyboardInterrupt) to exit gracefully
+        except KeyboardInterrupt:
             print("\nChoice selection aborted... interrupted. Exiting...")
             return ""
-
-#Test if everything works as expected.  
+ 
         while True:
             choice=input("Press ? to see previous conversations, or Enter for new conversation")
             if choice=="?":
-                history = History(selected_folder)
-                conversation = history.select_file()
-                if conversation is None:
+                history = History(selected_llm.model_folder)
+                conversation_file = history.select_file()
+                if conversation_file is None:
                     continue
-                #history.print_conversation(conversation)
-                llm = selected_model()
-                llm.print_conversation(conversation)
+                selected_llm.load_conversation(conversation_file)
+                Tools.print_conversation(conversation_file, selected_llm.model_name)
                 break
             else:
-                llm = selected_model()
+                selected_llm.conversation_history = []
                 break
             
-        #Start the conversation        
         while True:
             try:
-                Tools.print_colored( current_model+" - Enter your question, type 'end' in a separate line to end input, Ctl-C to return to the menu","black", "green")
+                Tools.print_colored( selected_llm.model_name+" - Enter your question, type 'end' in a separate line to end input, Ctl-C to return to the menu","black", "green")
                 content = Tools.getInput()
-                # Use the spinner as a context manager
-                spinner = Halo(text=f'Waiting for {llm.modelName}...', spinner='dots')
+                spinner = Halo(text=f'Waiting for {selected_llm.model_name}...', spinner='dots')
                 with spinner:
-                    # This network call happens while the spinner is running
-                    model_name, response = llm.get_response(content)
+                    model_name, response = selected_llm.get_response(content)
         
                 Tools.print_colored(f"{model_name} answer:", "blue", "white")
-                if USE_MARKDOWN:
+                
+                if Tools.USE_MARKDOWN:
                     console =Console()
-                    md = Markdown(response) # '  \n' two spaces and \n means carriage return
+                    md = Markdown(response)
                     console.print(md)
                 else:
-                    print(response) # normal print where '\n' means carriage return
-            except KeyboardInterrupt: # Handle Ctrl+C (KeyboardInterrupt) to exit gracefully
+                    print(response)
+            except KeyboardInterrupt:
                 print("\nReturning to the menu...\n\n")
                 break
-"""
-Retrieves conversation history for a LLM model
-Beta
-"""
-
-def conversation_history(models_name):
-    return
-"""
-This part should do the following:
-- Bassed on the model selected, go to models folder, retrieves the list 
-of conversations and make a simple way of displaying them and selecting one.
-- Once selected, history and date is retrieved and returned to the main program.
-This will be used to initialize the proper LLM with conversation /date.
-Additional conversation will be saved in the same conversation file.
-"""     
-
 
 if __name__ == "__main__":
     main2()
 
-
-# Nuevas mejoras (spanish/english):
-# TODO - Make sure good error control when running out of credits. 
-# TODO - upload to Github
-# TODO - Summarize video of the development
-# TODO - Add more classes for Google for example
-# TODO - Add more classes for Hugging Face and Endpoints 
-# TODO - unit tests right now. Urgently.
-
-# 20250127 - New feature:We can control how many tokens the model is using to answer. 
-# If the answer is too long , it is cut in half and remaining part of the answer is lost.
-# I've added an additional configuration option, allowing longer answers .
-# I've defined a 1024 tokens as default that covers about 80% to 90% of the cases. 
-# I've changed the menu so we can see how many tokens the model is using to answer, along with enhanced display to easily know in advance sessions lengths.
-        
 

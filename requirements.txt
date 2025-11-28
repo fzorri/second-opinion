@@ -13,6 +13,7 @@ pynput
 prompt_toolkit
 halo
 python-dotenv
+pyyaml
 
 
  

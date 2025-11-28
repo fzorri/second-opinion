@@ -56,7 +56,7 @@ conda activate secop
 pip install -r requirements.txt
 
 
-6 - **Set up your API Keys (Secrets):**
+6 - **Set up your API Keys and Models:**
    - Copy the new `.env.template` file to a file named `.env`. This file will hold all your secret API keys and is ignored by Git.
      ```shell
      # On Windows
@@ -66,22 +66,13 @@ pip install -r requirements.txt
      cp .env.template .env
      ```
    - Open the `.env` file and fill in your API keys for the services you want to use.
-
-7 - **Set up the Configuration:**
-   - Copy the `config_template.py` file to `config.py`. You generally won't need to edit this file anymore, as it now reads the API keys automatically from your `.env` file.
-     ```shell
-     # On Windows
-     copy config_template.py config.py
-
-     # On Linux or macOS
-     cp config_template.py config.py
-     ```
+   - **Model Configuration:** All model definitions are now in `models.yaml`. You can enable/disable models and configure their settings directly in this file.
 
 Running Second Opinion
 
 How to work with Second Opinion.
 
-1 - Run the secop.py file using 'python secop.py' (or just secop if you have the environment activated)
+1 - Run the secop.py file using 'python secop.py' (or just secop if you have the environment activated). The application will load models defined in `models.yaml`.
 
 2 - Select Model number and Enter twice to skip history.
 
@@ -100,11 +91,11 @@ Some tips:
 - In windows you can copy any part of the conversation just selecting the text and pressing ENTER. The text will be in the buffer and Ctl-V or Shift-Insert to paste it.
 
 Autocheck
-The autocheck (option A) is a loop that allows you to test all configured APIs.
+The autocheck (option A) is a loop that allows you to test all configured APIs based on your `models.yaml` definitions.
 
 History Mode 
 All the conversations you ever did using Second Opinion are stored locally. You can use it to browse you previous conversations, copy, delete, paste it, modify it or whatever
-you like. Every LLM stores its own conversations in folders, according the configuration you'll find in config.py
+you like. Every LLM stores its own conversations in folders, according the `model_folder` configuration you'll find in `models.yaml`.
 
 All conversations are stored in JSON format, so you can use any JSON editor to modify it, also the notepad or any text editor will work fine.
 
@@ -117,6 +108,11 @@ The history mode has few utilities within to make your life easier:
 Remember that you can take a conversation and extend it, and also since the conversation is stored locally, you can modify or alter
 a conversation already saved and reload it into a LLM. This 2 features are very useful to improve/change/hack a conversation we had 
 with a LLM, so be careful, since this is a very powerful option.
+
+---
+**Note:** The video series linked above might contain outdated information regarding project setup and extensibility (especially "Extending secop"). A new video reflecting the `models.yaml` based configuration will be created soon.
+---
+
 
 
 

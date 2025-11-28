@@ -1,0 +1,149 @@
+providers:
+  anthropic:
+    api_key_env: ANTHROPIC_API_KEY
+    class: Anthropic_LLM
+    module: llm_classes.llm_anthropic_base
+    models:
+      - model_name: "Claude V4.5 - Opus (Powerful)- 20251128"
+        model_id: "claude-opus-4-5-20251101"
+        model_folder: "models/anthropic-opus-45"
+        enabled: true
+      - model_name: "Claude V4.5 - Sonnet (Balanced) - 20251128"
+        model_id: "claude-sonnet-4-5-20250929"
+        model_folder: "models/anthropic-sonnet-45"
+        enabled: true
+      - model_name: "Claude V4.5 - Haiku (Fast) - 20251128"
+        model_id: "claude-haiku-4-5-20251001"
+        model_folder: "models/anthropic-haiku-45"
+        enabled: true
+      - model_name: "Claude V4 - Opus (Powerful)"
+        model_id: "claude-opus-4-1"
+        model_folder: "models/anthropic"
+        enabled: true
+      - model_name: "Claude V4 - Sonnet (Balanced) - 20251028"
+        model_id: "claude-sonnet-4-5"
+        model_folder: "models/anthropic"
+        enabled: true
+      - model_name: "Claude V4 - Haiku (Fast) - 20251028"
+        model_id: "claude-haiku-4-5"
+        model_folder: "models/anthropic"
+        enabled: true
+  deepseek:
+    api_key_env: DEEPSEEK_API_KEY
+    class: DeepSeek_LLM
+    module: llm_classes.llm_deepseek_base
+    models:
+      - model_name: "DeepSeek (chat)"
+        model_id: "deepseek-chat"
+        model_folder: "models/deepsek-chat"
+        max_tokens: 131072
+        enabled: true
+      - model_name: "DeepSeek (reasoner)"
+        model_id: "deepseek-reasoner"
+        model_folder: "models/deepseek-reasoner"
+        max_tokens: 131072
+        enabled: true
+  fireworks:
+    api_key_env: FIREWORKS_API_KEY
+    class: Fireworks_LLM
+    module: llm_classes.llm_fireworks_base
+    models:
+      - model_name: "Mistral 8x22 Instruct (fireworks.ai)"
+        model_id: "accounts/fireworks/models/mixtral-8x22b-instruct"
+        model_folder: "models/fireworks_mistral"
+        enabled: true
+      - model_name: "Qwen 3 Coder 480B - fireworks.ai - 20251028"
+        model_id: "accounts/fireworks/models/qwen3-coder-480b-a35b-instruct"
+        model_folder: "models/qwen3_coder-480b"
+        enabled: true
+      - model_name: "Kimi K2 Thinking - fireworks.ai - 20251113"
+        model_id: "accounts/fireworks/models/kimi-k2-thinking"
+        model_folder: "models/kimik2-thinking"
+        enabled: true
+  google:
+    api_key_env: GOOGLE_API_KEY
+    class: Google_LLM
+    module: llm_classes.llm_google_base
+    models:
+      - model_name: "Gemini Pro 3.0 Preview"
+        model_id: "models/gemini-3-pro-preview"
+        model_folder: "models/gemini-pro-3-preview"
+        max_tokens: 256000
+        enabled: true
+      - model_name: "Gemini Pro 2.5"
+        model_id: "models/gemini-2.5-pro"
+        model_folder: "models/gemini-pro-2_5"
+        max_tokens: 256000
+        enabled: true
+      - model_name: "Gemini Flash 2.5"
+        model_id: "models/gemini-2.5-flash"
+        model_folder: "models/gemini-flash-2_5"
+        max_tokens: 1048576
+        enabled: true
+  openai:
+    api_key_env: OPENAI_API_KEY
+    class: OpenAI_LLM
+    module: llm_classes.llm_openai_chatgpt_base
+    models:
+      - model_name: "ChatGPT 3.5 turbo (OpenAI)"
+        model_id: "gpt-3.5-turbo"
+        model_folder: "models/openai-chatgpt-3_5"
+        max_tokens: 4096
+        enabled: true
+      - model_name: "ChatGPT 4 turbo (OpenAI)"
+        model_id: "gpt-4-turbo"
+        model_folder: "models/openai-chatgpt-4_turbo"
+        enabled: true
+      - model_name: "ChatGPT 4 Omni (OpenAI)"
+        model_id: "gpt-4o"
+        model_folder": "models/openai-chatgpt-4_omni"
+        enabled: true
+      - model_name: "ChatGPT 4O Mini (OpenAI)"
+        model_id: "gpt-4o-mini"
+        model_folder: "models/openai-chatgpt-4o-mini"
+        enabled: true
+  groq:
+    api_key_env: GROQ_API_KEY
+    class: Groq_LLM
+    module: llm_classes.llm_groq_base
+    models:
+      - model_name: "Llama 3.3 70b versatile(groq)"
+        model_id: "llama-3.3-70b-versatile"
+        model_folder: "models/groq-llama33_70_b_versatile8b"
+        max_tokens: 4096
+        enabled: true
+      - model_name: "Qwen3 32b Reasoning (groq)"
+        model_id": "qwen/qwen3-32b"
+        model_folder: "models/groq-qwen3-32b"
+        max_tokens: 65536
+        enabled: true
+      - model_name: "Kimi K2 128K (groq)"
+        model_id: "moonshotai/kimi-k2-instruct"
+        model_folder: "models/kimi-k2"
+        max_tokens: 128000
+        enabled: true
+  xai:
+    api_key_env: XAI_API_KEY
+    class: XAI_LLM
+    module: llm_classes.llm_xai_base
+    models:
+      - model_name: "Grok 4.1 Fast non-reasoning (Xai)"
+        model_id: "grok-4-1-fast-non-reasoning"
+        model_folder: "models/grok-4-fnr"
+        max_tokens: 1000000
+        enabled: true
+      - model_name: "Grok 4.1 Fast Reasoning (Xai)"
+        model_id: "grok-4-1-fast-reasoning"
+        model_folder: "models/grok-4-fr"
+        max_tokens: 1000000
+        enabled: true
+      - model_name: "Grok 4 (Xai)"
+        model_id: "grok-4-0709"
+        model_folder: "models/grok-4"
+        max_tokens: 250000
+        enabled: true
+      - model_name: "Grok 4 Fast - 20250923"
+        model_id: "grok-code-fast-1"
+        model_folder: "models/grok-code-fast-1"
+        max_tokens": 2097152
+        enabled: true
