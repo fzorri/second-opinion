@@ -102,6 +102,16 @@ providers:
         model_id: "gpt-4o-mini"
         model_folder: "models/openai-chatgpt-4o-mini"
         enabled: true
+  glm:
+    api_key_env: GLM47_API_KEY
+    class: Zai_LLM
+    module: llm_classes.llm_glm_base
+    models:
+      - model_name: "GLM 4.7 (z.ai)"
+        model_id: "glm-4.7"
+        model_folder: "models/glm-47"
+        max_tokens: 128000
+        enabled: true
   groq:
     api_key_env: GROQ_API_KEY
     class: Groq_LLM
