@@ -2,10 +2,7 @@
 # 20240626 - History presented in reversed order since many times we need
 # to recover the latest conversation(s)
 import os
-import re
 import importlib
-import shutil
-from datetime import datetime
 from tools import Tools
 import json
 import config
@@ -48,7 +45,7 @@ class History:
                 date_time_part = file[len('conversation_history_'):-5]  # Remove prefix and '.json'
                 date_part, time_part = date_time_part.split('-')
                 formatted_date = f"{date_part[:4]}-{date_part[4:6]}-{date_part[6:]}"  # YYYY-MM-DD
-                formatted_time = f"{time_part[:2]}:{time_part[2:4]}:{time_part[4:6]}"  # HH:MM:SS
+                formatted_time = f"{time_part[:2]}:{time_part[2:4]}:{time_part[4:]}"  # HH:MM:SS
                 formatted_files.append((file, f"{formatted_date} {formatted_time}"))
 
         if not formatted_files:
@@ -86,32 +83,29 @@ class History:
     CONTENT_LENGTH_LIMIT = 100  # Define a constant for content length limit
 
     def peek_inside_json(self, file_path):
+        """
+        Check a JSON file inside, showing the first 100 characters.
+        """
         try:
             with open(file_path, 'r') as file:
                 data = json.load(file)
-                messages = data["messages"] if isinstance(data, dict) else data
-                if isinstance(messages, list) and messages:
+                if isinstance(data, list) and data:  # Check if data is a non-empty list
                     combined_content = ""
-                    attach_count = 0
-                    for item in messages:
-                        content = item.get('content', '')
-                        if isinstance(content, list):
-                            content = ' '.join(str(p) for p in content)
-                        attach_count += len(re.findall(r'\[Ref: [^\]]+\]', str(content)))
-                        content = str(content).replace('\r', '').replace('\n', '')
-                        if len(combined_content) + len(content) + 1 <= self.CONTENT_LENGTH_LIMIT:
-                            if combined_content:
-                                combined_content += '|'
-                            combined_content += content
-                        else:
-                            remaining_space = self.CONTENT_LENGTH_LIMIT - len(combined_content)
-                            if remaining_space > 0:
-                                combined_content += '|' + content[:remaining_space]
-                            break
-                    prefix = f"({attach_count} attachments) " if attach_count > 0 else ""
-                    return prefix + combined_content
+                    for item in data:
+                        if isinstance(item, dict) and 'content' in item:
+                            content = item['content'].replace('\r', '').replace('\n', '')  # remove carriage returns and newlines
+                            if len(combined_content) + len(content) + 1 <= self.CONTENT_LENGTH_LIMIT:
+                                if combined_content:
+                                    combined_content += '|'
+                                combined_content += content
+                            else:
+                                remaining_space = self.CONTENT_LENGTH_LIMIT - len(combined_content)
+                                if remaining_space > 0:
+                                    combined_content += '|' + content[:remaining_space]
+                                break
+                    return combined_content
                 else:
-                    return "  Error: Data is empty."
+                    return "  Error: Data is not a list or is empty."
         except json.JSONDecodeError:
             return "  Error: Invalid JSON format."
         except Exception as e:
@@ -119,27 +113,8 @@ class History:
 
 # WATCHOUT: There is no turning back!
     def delete_conversation(self, filepath):
+        # Placeholder method to delete conversations
         try:
-            # Read JSON to find attachment references
-            try:
-                with open(filepath, 'r') as f:
-                    data = json.load(f)
-                messages = data["messages"] if isinstance(data, dict) else data
-                # Delete referenced attachment files
-                attach_dir = os.path.join(os.path.dirname(filepath), "attachments")
-                for msg in messages:
-                    content = msg.get('content', '')
-                    for ref in re.findall(r'\[Ref: ([^\]]+)\]', str(content)):
-                        ref_path = os.path.join(attach_dir, ref)
-                        if os.path.exists(ref_path):
-                            os.remove(ref_path)
-                            print(f"Deleted attachment: {ref}")
-                # Delete attachments folder if empty
-                if os.path.exists(attach_dir) and not os.listdir(attach_dir):
-                    os.rmdir(attach_dir)
-            except:
-                pass
-            # Delete JSON file
             os.remove(filepath)
             print(f"File {filepath} has been deleted.")
         except FileNotFoundError:
@@ -163,56 +138,23 @@ class History:
     Warning: it deletes all the other files, keeping the latest
     """
     def merge_conversations(self, files):
-        all_messages = []
-        total_in = 0
-        total_out = 0
-        total_tokens = 0
-        # Target attachment directory (from first file)
-        first_dir = os.path.dirname(files[0])
-        target_attach_dir = os.path.join(first_dir, "attachments")
-
+        # Placeholder method to merge conversations
+        merge=[]
         for file in files:
-            print(f"merging {file} ...")
+            print(f"merging {file} ..." )
             with open(file, 'r') as f:
-                data = json.load(f)
-                messages = data["messages"] if isinstance(data, dict) else data
-                all_messages.extend(messages)
-                if isinstance(data, dict):
-                    m = data.get("metadata", {})
-                    total_in += m.get("total_input_tokens", 0)
-                    total_out += m.get("total_output_tokens", 0)
-                    total_tokens += m.get("total_tokens", 0)
-            # Merge attachment files
-            src_attach_dir = os.path.join(os.path.dirname(file), "attachments")
-            if os.path.exists(src_attach_dir):
-                os.makedirs(target_attach_dir, exist_ok=True)
-                for att_file in os.listdir(src_attach_dir):
-                    src = os.path.join(src_attach_dir, att_file)
-                    dst = os.path.join(target_attach_dir, att_file)
-                    if os.path.exists(dst):
-                        # Handle filename conflict
-                        base, ext = os.path.splitext(att_file)
-                        dst = os.path.join(target_attach_dir, f"{base}_{datetime.now().strftime('%H%M%S')}{ext}")
-                    shutil.copy2(src, dst)
-
-        merged = {
-            "messages": all_messages,
-            "metadata": {
-                "conversation_name": "",
-                "last_updated": datetime.now().strftime("%Y%m%d-%H%M%S"),
-                "total_input_tokens": total_in,
-                "total_output_tokens": total_out,
-                "total_tokens": total_tokens
-            }
-        }
-
+                merge.extend(json.load(f))
+        
+        #get the first file in the files array
         first_file = files[0]
+        #write the merged data to the first file
         with open(first_file, 'w') as f:
-            json.dump(merged, f, indent=4)
+            json.dump(merge, f, indent=4)
 
+        #delete the other files
         for file in files[1:]:
             self.delete_conversation(file)
-        print(f"Done! All files have been merged to {first_file}.")
+        print (f"Done! All files have been merged to {first_file}.")
 
     
     """
@@ -289,61 +231,33 @@ class History:
         with open(file_path, 'r') as file:
             data = json.load(file)
 
-        messages = data["messages"] if isinstance(data, dict) else data
-        model_folder = os.path.dirname(file_path)
-
-        for entry in messages:
-            role = entry.get('role', '')
-            content = entry.get('content', '')
-            if isinstance(content, list):
-                content = ' '.join(str(p) for p in content)
-            # Resolve [Ref: ...] markers for display
-            content = self._resolve_refs_for_display(content, model_folder)
-            if role == 'user':
+        for entry in data:
+            if entry['role'] == 'user':
                 Tools.print_colored("Your question:","black", "green")
-                print(content)
-            elif role in ('assistant', 'model'):
+                print(entry['content'])
+            elif entry['role'] == 'assistant':
                 Tools.print_colored(f"AI answer:", "blue", "white")
                 if USE_MARKDOWN:
                     console =Console()
-                    md = Markdown(content)
+                    md = Markdown(entry['content']) # '  \n' two spaces and \n means carriage return
                     console.print(md)
                 else:
-                    print(content)
-
-    def _resolve_refs_for_display(self, text, model_folder):
-        def replace_ref(match):
-            ref_name = match.group(1)
-            attach_path = os.path.join(model_folder, "attachments", ref_name)
-            if not os.path.exists(attach_path):
-                return f"[Attachment missing: {ref_name}]"
-            try:
-                with open(attach_path, 'r', encoding='utf-8', errors='replace') as f:
-                    return f.read()
-            except:
-                return f"[Error reading: {ref_name}]"
-        return re.sub(r'\[Ref: ([^\]]+)\]', replace_ref, text)
+                    print(entry['content']) # normal print where '\n' means carriage return
 
     def export_to_markdown(self, file_path):
+        """
+        Exports a conversation from a JSON file to a Markdown file.
+        """
         try:
             with open(file_path, 'r') as file:
                 data = json.load(file)
 
-            messages = data["messages"] if isinstance(data, dict) else data
-            model_folder = os.path.dirname(file_path)
-
             markdown_content = []
-            for entry in messages:
-                role = entry.get('role', '')
-                content = entry.get('content', '')
-                if isinstance(content, list):
-                    content = ' '.join(str(p) for p in content)
-                # Resolve [Ref: ...] markers for export
-                content = self._resolve_refs_for_display(content, model_folder)
-                if role == 'user':
-                    markdown_content.append(f"**User:**\n{content}\n")
-                elif role in ('assistant', 'model'):
-                    markdown_content.append(f"**Assistant:**\n{content}\n")
+            for entry in data:
+                if entry['role'] == 'user':
+                    markdown_content.append(f"**User:**\n{entry['content']}\n")
+                elif entry['role'] == 'assistant':
+                    markdown_content.append(f"**Assistant:**\n{entry['content']}\n")
 
             markdown_output = "\n".join(markdown_content)
             output_filepath = os.path.splitext(file_path)[0] + '.md'
