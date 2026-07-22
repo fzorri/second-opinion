@@ -16,25 +16,25 @@ from rich.markdown import Markdown
 class Zai_LLM(LLMBase):
     def __init__(self,config_data):
         super().__init__(config_data)
-        self.conversation_history = self._new_conversation()
+        self.conversation_history = []
         self.timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         self.client = self.initialize_client()
 
+    #this is going to return self.client= MistralClient initialized
     def initialize_client(self):
         return ZaiClient(api_key=self.api_key)        
 
     def send_message(self, text):
-        text = self._resolve_refs(text)
-        self.conversation_history["messages"].append({"role": "user", "content": text})
+        # Append the user's message to the conversation history
+        self.conversation_history.append({"role": "user", "content": text})
         try:
             response = self.client.chat.completions.create(
                 model=self.model_id,
-                messages=self.conversation_history["messages"]
+                messages=self.conversation_history
             )
             
-            usage = self._extract_usage(response)
-            self.conversation_history["messages"].append({"role": "assistant", "content": response.choices[0].message.content})
-            self._update_metadata(usage)
+            # Append the model's response to the conversation history
+            self.conversation_history.append({"role": "assistant", "content": response.choices[0].message.content})
             Tools.save_conversation(self.conversation_history,self.model_folder,
                                     self.timestamp)
 
@@ -48,7 +48,7 @@ class Zai_LLM(LLMBase):
         fname= os.path.basename(conversation_file)
         self.timestamp = fname[len('conversation_history_'):-5]
         with open(conversation_file, 'r') as ch:
-            self.conversation_history=self._normalize_conversation(json.load(ch))
+            self.conversation_history=json.load(ch)
 
 
 

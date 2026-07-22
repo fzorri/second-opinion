@@ -17,7 +17,7 @@ class Nvidia_LLM(LLMBase):
     def __init__(self, config_data):
         super().__init__(config_data)
         self.temperature = self.config.get("temperature", Tools.DEFAULT_TEMPERATURE)
-        self.conversation_history = self._new_conversation()
+        self.conversation_history = []
         self.timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         self.client = self.initialize_client()
 
@@ -28,39 +28,39 @@ class Nvidia_LLM(LLMBase):
         )
 
     def send_message(self, text):
-        text = self._resolve_refs(text)
-        self.conversation_history["messages"].append({"role": "user", "content": text})
+        self.conversation_history.append({"role": "user", "content": text})
         try:
+            # Build extra_body based on thinking configuration
             extra_body = {}
             if self.enable_thinking:
                 extra_body["chat_template_kwargs"] = {
                     self.thinking_param: True,
                     "reasoning_effort": self.reasoning_effort
                 }
-
+            
             response = self.client.chat.completions.create(
                 model=self.model_id,
-                messages=self.conversation_history["messages"],
+                messages=self.conversation_history,
                 temperature=self.temperature,
                 max_tokens=self.max_tokens,
                 extra_body=extra_body if extra_body else None,
                 stream=False
             )
 
+            # Handle optional reasoning content
             reasoning = getattr(response.choices[0].message, "reasoning", None) or \
                         getattr(response.choices[0].message, "reasoning_content", None)
 
             content = response.choices[0].message.content
 
+            # Build response with reasoning if present and enabled
             if reasoning and self.show_reasoning:
                 reasoning_colored = Tools.format_reasoning(reasoning)
                 full_response = f"**Reasoning:**\n{reasoning_colored}\n\n**Answer:**\n{content}"
             else:
                 full_response = content
 
-            usage = self._extract_usage(response)
-            self.conversation_history["messages"].append({"role": "assistant", "content": full_response})
-            self._update_metadata(usage)
+            self.conversation_history.append({"role": "assistant", "content": full_response})
             Tools.save_conversation(self.conversation_history, self.model_folder, self.timestamp)
 
             return self.model_name, full_response
@@ -73,4 +73,4 @@ class Nvidia_LLM(LLMBase):
         fname = os.path.basename(conversation_file)
         self.timestamp = fname[len('conversation_history_'):-5]
         with open(conversation_file, 'r') as ch:
-            self.conversation_history = self._normalize_conversation(json.load(ch))
+            self.conversation_history = json.load(ch)

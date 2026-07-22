@@ -1,7 +1,6 @@
 import os
 import importlib
 import sys
-from datetime import datetime
 from halo import Halo
 from rich.console import Console
 from rich.markdown import Markdown
@@ -17,6 +16,7 @@ AUTOCHECK_TEST="Round the pi number to the 4th decimal place.Answer in the follo
 AUTOCHECK_ANSWER="3.141"
 HISTORY_PATH = 'models'
 VERSION = '1.7.5'
+REASONING_COLOR = 'gray'  # Color for reasoning text (subtle gray)
 
 #set proxy if is needed
 def check_proxy():
@@ -195,7 +195,7 @@ def main2():
                 Tools.print_conversation(conversation_file, selected_llm.model_name)
                 break
             else:
-                selected_llm.conversation_history = selected_llm._new_conversation()
+                selected_llm.conversation_history = []
                 break
             
         while True:
@@ -214,13 +214,6 @@ def main2():
                     console.print(md)
                 else:
                     print(response)
-
-                meta = selected_llm.conversation_history.get("metadata", {})
-                if meta.get("total_tokens", 0) > 0:
-                    Tools.print_colored(
-                        f"[tokens: in={meta['total_input_tokens']}, out={meta['total_output_tokens']}, total={meta['total_tokens']}]",
-                        "gray", "black"
-                    )
             except KeyboardInterrupt:
                 print("\nReturning to the menu...\n\n")
                 break

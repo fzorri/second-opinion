@@ -1,5 +1,4 @@
 import os
-import re
 import json
 from mistralai.models.chat_completion import ChatMessage as MChatMessage
 from octoai.text_gen import ChatMessage as OChatMessage
@@ -25,11 +24,16 @@ class Tools:
 
     @staticmethod
     def return_string_colored(text,color,background):
-        color_codes = {'black': '30','red': '31','green': '32','yellow': '33','blue': '34','magenta': '35','cyan': '36', 'white': '37'    }
+        color_codes = {'black': '30','red': '31','green': '32','yellow': '33','blue': '34','magenta': '35','cyan': '36', 'white': '37', 'gray': '90'}
         background_codes = { 'black': '40','red': '41', 'green': '42', 'yellow': '43','blue': '44', 'magenta': '45', 'cyan': '46', 'white': '47' }
         color_code = color_codes.get(color.lower(), '37')
         background_code = background_codes.get(background.lower(), '40')
         return f"\033[{color_code};{background_code}m{text}\033[0m"
+
+    @staticmethod
+    def format_reasoning(reasoning_text):
+        """Format reasoning text with distinct color (subtle gray)"""
+        return Tools.return_string_colored(reasoning_text, "gray", "black")
 
     @staticmethod
     def getInput():
@@ -113,31 +117,18 @@ class Tools:
         timestamp = fname[len('conversation_history_'):-5]
 
         with open(conversation_file, 'r') as ch:
-            data = json.load(ch)
-
-        messages = data["messages"] if isinstance(data, dict) else data
-        model_folder = os.path.dirname(conversation_file)
+            conversation_history = json.load(ch)
 
         Tools.print_colored(f"Conversation history Start: {timestamp} with {llm_model_name}","black", "green")
         print("\n")
-        for entry in messages:
-            role = entry.get('role', '')
-            content = entry.get('content', '')
-            
-            # Show file info for user messages with attachments
-            if role == 'user' and '[File:' in str(content):
-                file_match = re.search(r'\[File: ([^\]]+)\]', str(content))
-                if file_match:
-                    Tools.print_colored(f"  Attached: {file_match.group(1)}", "gray", "black")
-            
-            # Resolve [Ref: ...] markers for display
-            if '[Ref:' in str(content):
-                content = Tools._resolve_refs_for_display(content, model_folder)
+        for entry in conversation_history:
+            role = entry['role']
+            content = entry['content']
             
             if role == 'user':
                 Tools.print_colored("Your question:","black", "green")
                 print(content)
-            elif role in ('assistant', 'model'):
+            elif role == 'assistant' or role == 'model': # Google uses 'model' role
                 Tools.print_colored(f"{llm_model_name} answer:", "blue", "white")
                 if Tools.USE_MARKDOWN:
                     console = Console()
@@ -146,17 +137,3 @@ class Tools:
                 else:
                     print(content)
         Tools.print_colored(f"\nConversation history ended: {timestamp}","black", "green")
-
-    @staticmethod
-    def _resolve_refs_for_display(text, model_folder):
-        def replace_ref(match):
-            ref_name = match.group(1)
-            attach_path = os.path.join(model_folder, "attachments", ref_name)
-            if not os.path.exists(attach_path):
-                return f"[Attachment missing: {ref_name}]"
-            try:
-                with open(attach_path, 'r', encoding='utf-8', errors='replace') as f:
-                    return f.read()
-            except:
-                return f"[Error reading: {ref_name}]"
-        return re.sub(r'\[Ref: ([^\]]+)\]', replace_ref, text)

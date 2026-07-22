@@ -38,13 +38,50 @@ from dotenv import load_dotenv
 
 MODELS_YAML_PATH = "models.yaml"
 
-# File attachment threshold (bytes)
-MAX_FILE_SIZE_EMBED = int(os.getenv('MAX_FILE_SIZE_EMBED', '10240'))
+# Nvidia NIM API documentation link
+NVIDIA_NIM_DOCS = "https://docs.nvidia.com/nim/large-language-models/latest/reasoning-model.html"
+
+# Valid reasoning_effort values for Nvidia NIM API
+VALID_REASONING_EFFORTS = ["low", "medium", "high", "max"]
+
+# Valid thinking parameter names
+VALID_THINKING_PARAMS = ["thinking", "enable_thinking"]
+
+def validate_nvidia_thinking_config(model_name, model_config):
+    """
+    Validate Nvidia thinking configuration parameters.
+    Returns list of error messages, empty if valid.
+    """
+    errors = []
+    
+    enable_thinking = model_config.get("enable_thinking", False)
+    reasoning_effort = model_config.get("reasoning_effort", "high")
+    thinking_param = model_config.get("thinking_param", "thinking")
+    
+    # Validate reasoning_effort
+    if reasoning_effort not in VALID_REASONING_EFFORTS:
+        errors.append(
+            f"Invalid reasoning_effort '{reasoning_effort}' for model '{model_name}'. "
+            f"Valid values: {VALID_REASONING_EFFORTS}. "
+            f"Documentation: {NVIDIA_NIM_DOCS}"
+        )
+    
+    # Validate thinking_param
+    if thinking_param not in VALID_THINKING_PARAMS:
+        errors.append(
+            f"Invalid thinking_param '{thinking_param}' for model '{model_name}'. "
+            f"Valid values: {VALID_THINKING_PARAMS}. "
+            f"Documentation: {NVIDIA_NIM_DOCS}"
+        )
+    
+    return errors
 
 def load_model_configurations():
     load_dotenv()
     with open(MODELS_YAML_PATH, 'r') as file:
         config = yaml.safe_load(file)
+    
+    all_errors = []
 
     for provider_name, provider_data in config.get("providers", {}).items():
         api_key_env_var = provider_data.get("api_key_env")
@@ -53,6 +90,34 @@ def load_model_configurations():
         for model in provider_data.get("models", []):
             if "enabled" not in model:
                 model["enabled"] = True
+            if "show_reasoning" not in model:
+                model["show_reasoning"] = True  # Default: show reasoning if present
+            
+            # Nvidia-specific thinking configuration
+            if provider_name == "nvidia":
+                # Set defaults for thinking parameters
+                if "enable_thinking" not in model:
+                    model["enable_thinking"] = False  # Default: disabled
+                if "reasoning_effort" not in model:
+                    model["reasoning_effort"] = "high"  # Default: high
+                if "thinking_param" not in model:
+                    model["thinking_param"] = "thinking"  # Default: thinking
+                
+                # Validate configuration
+                errors = validate_nvidia_thinking_config(model.get("model_name", "unknown"), model)
+                all_errors.extend(errors)
+    
+    # Print errors but don't stop execution - let user see all errors at once
+    if all_errors:
+        print("\n" + "="*80)
+        print("CONFIGURATION ERRORS FOUND:")
+        print("="*80)
+        for error in all_errors:
+            print(f"  ❌ {error}")
+        print("="*80)
+        print("Please fix the above errors in models.yaml and restart the application.")
+        print("="*80 + "\n")
+    
     return config
 
 MODELS_CONFIGURATION = load_model_configurations()
