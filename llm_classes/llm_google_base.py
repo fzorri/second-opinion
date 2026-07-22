@@ -17,15 +17,15 @@ from rich.markdown import Markdown
 class Google_LLM(LLMBase):
     def __init__(self,config_data):
         super().__init__(config_data)
-        self.conversation_history=[]
+        self.conversation_history=self._new_conversation()
         self.timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        self.initialize_client() # Google's client configuration is global
-
+        self.initialize_client()
 
     def initialize_client(self):
         return genai.configure(api_key=self.api_key)
 
     def send_message(self, text):
+        text = self._resolve_refs(text)
         generation_config = { "temperature": 0, "top_p": 0.95, "top_k": 64, "max_output_tokens": 8192, "response_mime_type": "text/plain",}
         safety_settings = [
             {"category": "HARM_CATEGORY_HARASSMENT","threshold": "BLOCK_NONE",},
@@ -35,24 +35,21 @@ class Google_LLM(LLMBase):
         try:
             model = genai.GenerativeModel( model_name=self.model_id, safety_settings=safety_settings, generation_config=generation_config,)
 
-            self.conversation_history.append({"role": "user", "parts": [text + "\n"]})
-            chat_session = model.start_chat(history=self.conversation_history)
+            self.conversation_history["messages"].append({"role": "user", "parts": [text + "\n"]})
+            chat_session = model.start_chat(history=self.conversation_history["messages"])
             response = chat_session.send_message(text)
 
-            # Add LLM response to history
-            self.conversation_history.append({"role": "model", "parts": [response.text]})
-
+            usage = self._extract_usage(response)
+            self.conversation_history["messages"].append({"role": "model", "parts": [response.text]})
+            self._update_metadata(usage)
             Tools.save_conversation(self.conversation_history,self.model_folder,self.timestamp)
             return self.model_name, response.text
         except Exception as e:
             error_message = "An unexpected error occurred:  \n" + str(e)
             return self.model_name, error_message
 
-
     def load_conversation(self, conversation_file):
         fname= os.path.basename(conversation_file)
         self.timestamp = fname[len('conversation_history_'):-5]
         with open(conversation_file, 'r') as ch:
-            self.conversation_history=json.load(ch)
-
-
+            self.conversation_history=self._normalize_conversation(json.load(ch))

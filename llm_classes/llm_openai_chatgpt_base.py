@@ -13,33 +13,30 @@ from rich.markdown import Markdown
 
 
 class OpenAI_LLM(LLMBase):
-    # Define a default token limit
     def __init__(self, config_data):
         super().__init__(config_data)
         self.temperature= self.config.get("temperature", Tools.DEFAULT_TEMPERATURE)
-        self.conversation_history = []
+        self.conversation_history = self._new_conversation()
         self.timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         self.client = self.initialize_client()
 
-    #this is going to return self.client= MistralClient initialized
     def initialize_client(self):
         return OpenAI(api_key=self.api_key)        
 
     def send_message(self, text):
-        # Append the user's message to the conversation history
-        # max_tokens=self.max_tokens, 
-        self.conversation_history.append({"role": "user", "content": text})
+        text = self._resolve_refs(text)
+        self.conversation_history["messages"].append({"role": "user", "content": text})
         try:
             response = self.client.chat.completions.create(
                 model=self.model_id,
-                messages=self.conversation_history,
+                messages=self.conversation_history["messages"],
                 max_tokens =self.max_tokens,
                 temperature=self.temperature, 
                 stream=False )
 
-            # Append the model's response to the conversation history
-            self.conversation_history.append({"role": "assistant", "content": response.choices[0].message.content})
-
+            usage = self._extract_usage(response)
+            self.conversation_history["messages"].append({"role": "assistant", "content": response.choices[0].message.content})
+            self._update_metadata(usage)
             Tools.save_conversation(self.conversation_history,self.model_folder,
                                     self.timestamp)
             return self.model_name, response.choices[0].message.content
@@ -52,5 +49,4 @@ class OpenAI_LLM(LLMBase):
         fname= os.path.basename(conversation_file)
         self.timestamp = fname[len('conversation_history_'):-5]
         with open(conversation_file, 'r') as ch:
-            self.conversation_history=json.load(ch)
-
+            self.conversation_history=self._normalize_conversation(json.load(ch))

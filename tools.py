@@ -1,4 +1,5 @@
 import os
+import re
 import json
 from mistralai.models.chat_completion import ChatMessage as MChatMessage
 from octoai.text_gen import ChatMessage as OChatMessage
@@ -117,18 +118,31 @@ class Tools:
         timestamp = fname[len('conversation_history_'):-5]
 
         with open(conversation_file, 'r') as ch:
-            conversation_history = json.load(ch)
+            data = json.load(ch)
+
+        messages = data["messages"] if isinstance(data, dict) else data
+        model_folder = os.path.dirname(conversation_file)
 
         Tools.print_colored(f"Conversation history Start: {timestamp} with {llm_model_name}","black", "green")
         print("\n")
-        for entry in conversation_history:
-            role = entry['role']
-            content = entry['content']
+        for entry in messages:
+            role = entry.get('role', '')
+            content = entry.get('content', '')
+            
+            # Show file info for user messages with attachments
+            if role == 'user' and '[File:' in str(content):
+                file_match = re.search(r'\[File: ([^\]]+)\]', str(content))
+                if file_match:
+                    Tools.print_colored(f"  Attached: {file_match.group(1)}", "gray", "black")
+            
+            # Resolve [Ref: ...] markers for display
+            if '[Ref:' in str(content):
+                content = Tools._resolve_refs_for_display(content, model_folder)
             
             if role == 'user':
                 Tools.print_colored("Your question:","black", "green")
                 print(content)
-            elif role == 'assistant' or role == 'model': # Google uses 'model' role
+            elif role in ('assistant', 'model'):
                 Tools.print_colored(f"{llm_model_name} answer:", "blue", "white")
                 if Tools.USE_MARKDOWN:
                     console = Console()
@@ -137,3 +151,17 @@ class Tools:
                 else:
                     print(content)
         Tools.print_colored(f"\nConversation history ended: {timestamp}","black", "green")
+
+    @staticmethod
+    def _resolve_refs_for_display(text, model_folder):
+        def replace_ref(match):
+            ref_name = match.group(1)
+            attach_path = os.path.join(model_folder, "attachments", ref_name)
+            if not os.path.exists(attach_path):
+                return f"[Attachment missing: {ref_name}]"
+            try:
+                with open(attach_path, 'r', encoding='utf-8', errors='replace') as f:
+                    return f.read()
+            except:
+                return f"[Error reading: {ref_name}]"
+        return re.sub(r'\[Ref: ([^\]]+)\]', replace_ref, text)
