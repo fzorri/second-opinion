@@ -38,6 +38,9 @@ from dotenv import load_dotenv
 
 MODELS_YAML_PATH = "models.yaml"
 
+# File attachment threshold (bytes)
+MAX_FILE_SIZE_EMBED = int(os.getenv('MAX_FILE_SIZE_EMBED', '10240'))
+
 def load_model_configurations():
     load_dotenv()
     with open(MODELS_YAML_PATH, 'r') as file:

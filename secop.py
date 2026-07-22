@@ -1,6 +1,7 @@
 import os
 import importlib
 import sys
+from datetime import datetime
 from halo import Halo
 from rich.console import Console
 from rich.markdown import Markdown
@@ -194,7 +195,7 @@ def main2():
                 Tools.print_conversation(conversation_file, selected_llm.model_name)
                 break
             else:
-                selected_llm.conversation_history = []
+                selected_llm.conversation_history = selected_llm._new_conversation()
                 break
             
         while True:
@@ -213,6 +214,13 @@ def main2():
                     console.print(md)
                 else:
                     print(response)
+
+                meta = selected_llm.conversation_history.get("metadata", {})
+                if meta.get("total_tokens", 0) > 0:
+                    Tools.print_colored(
+                        f"[tokens: in={meta['total_input_tokens']}, out={meta['total_output_tokens']}, total={meta['total_tokens']}]",
+                        "gray", "black"
+                    )
             except KeyboardInterrupt:
                 print("\nReturning to the menu...\n\n")
                 break
