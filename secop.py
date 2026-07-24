@@ -85,6 +85,64 @@ def autocheck():
             print(f"{str(i).zfill(2)}: {model_name} : ", result)
             print(f"Error details: {e}")
                 
+def handle_orphaned_conversations():
+    """Handle browsing and managing orphaned conversations from deprecated models."""
+    orphaned = History.list_orphaned_folders()
+    
+    if not orphaned:
+        print("\nNo orphaned conversations found.")
+        return
+    
+    while True:
+        print(f"\n=== Orphaned Conversations ({len(orphaned)} models) ===\n")
+        
+        for idx, (name, path, count) in enumerate(orphaned, 1):
+            print(f"{str(idx).zfill(2)}. {name:<35} ({count} conversations)")
+        
+        print(f"\nD#: Delete entire model folder (e.g., D1)")
+        print("0:  Abort")
+        
+        try:
+            choice = input("\nSelect folder# to browse, or D# to delete: ")
+            
+            if choice == "0":
+                return
+            
+            # Handle delete entire model
+            if choice.upper().startswith("D"):
+                try:
+                    del_idx = int(choice[1:]) - 1
+                    if 0 <= del_idx < len(orphaned):
+                        name, path, count = orphaned[del_idx]
+                        History.delete_orphaned_model(path)
+                        # Refresh list
+                        orphaned = History.list_orphaned_folders()
+                        if not orphaned:
+                            print("\nNo more orphaned conversations.")
+                            return
+                    else:
+                        print("Invalid selection.")
+                except ValueError:
+                    print("Invalid format. Use D1, D2, etc.")
+                continue
+            
+            # Handle browse
+            folder_idx = int(choice) - 1
+            if 0 <= folder_idx < len(orphaned):
+                name, path, count = orphaned[folder_idx]
+                history = History(path)
+                history.select_orphaned_file()
+                # Refresh list after operations
+                orphaned = History.list_orphaned_folders()
+                if not orphaned:
+                    print("\nNo more orphaned conversations.")
+                    return
+            else:
+                print("Invalid selection.")
+                
+        except ValueError:
+            print("Invalid input.")
+                
 def main2():
     check_proxy()
     print("***************************************************")
@@ -144,13 +202,16 @@ def main2():
         for i, model_info in enumerate(all_models_info, start=1):
             print(f"{str(i).zfill(2)}: {model_info['display_name']}")
         
-        print ("\nCOMMANDS\nA: Autocheck: test if all models are working properly")    
+        print ("\nCOMMANDS\nA: Autocheck: test if all models are working properly\nO: Orphaned conversations: browse deprecated model histories")    
         try:
             while True:
                 try:
-                    choice = input("Select A, Model# or 0 to abort:")
+                    choice = input("Select A, O, Model# or 0 to abort:")
                     if choice.upper() == "A":
                         autocheck()
+                        continue
+                    if choice.upper() == "O":
+                        handle_orphaned_conversations()
                         continue
                     choice_num = int(choice)
                     if choice_num == 0:
@@ -214,6 +275,12 @@ def main2():
                     console.print(md)
                 else:
                     print(response)
+
+                # Display token usage
+                if selected_llm.last_usage:
+                    u = selected_llm.last_usage
+                    tokens_str = f"In: {u.get('input_tokens', 0)} | Out: {u.get('output_tokens', 0)} | Total: {u.get('total_tokens', 0)}"
+                    Tools.print_colored(f"Tokens — {tokens_str}", "black", "cyan")
             except KeyboardInterrupt:
                 print("\nReturning to the menu...\n\n")
                 break

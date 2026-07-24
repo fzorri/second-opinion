@@ -41,6 +41,9 @@ MODELS_YAML_PATH = "models.yaml"
 # File attachment threshold (bytes) - files smaller than this are embedded inline
 MAX_FILE_SIZE_EMBED = int(os.getenv('MAX_FILE_SIZE_EMBED', '10240'))
 
+# Maximum length for conversation names
+MAX_CONVERSATION_NAME_LENGTH = int(os.getenv('MAX_CONVERSATION_NAME_LENGTH', '120'))
+
 # Nvidia NIM API documentation link
 NVIDIA_NIM_DOCS = "https://docs.nvidia.com/nim/large-language-models/latest/reasoning-model.html"
 

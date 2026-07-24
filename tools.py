@@ -159,4 +159,17 @@ class Tools:
                     return f.read()
             except:
                 return f"[Error reading: {ref_name}]"
-        return re.sub(r'\[Ref: ([^\]]+)\]', replace_ref, text)
+
+        def replace_path(match):
+            file_path = match.group(1)
+            if not os.path.exists(file_path):
+                return f"[Path not found: {file_path}]"
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+                    return f.read()
+            except:
+                return f"[Error reading: {file_path}]"
+
+        text = re.sub(r'\[Ref: ([^\]]+)\]', replace_ref, text)
+        text = re.sub(r'\[Path: ([^\]]+)\]', replace_path, text)
+        return text

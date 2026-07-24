@@ -66,8 +66,28 @@ class History:
             
             for idx in range(start, end):
                 file, formatted_date_time = formatted_files[idx]
-                content = self.peek_inside_json(os.path.join(self.folder_path, file))
-                print(f"{str(idx + 1).zfill(2)}. {formatted_date_time} -> {content}\n")
+                file_path = os.path.join(self.folder_path, file)
+                metadata = self.get_conversation_metadata(file_path)
+                content = self.peek_inside_json(file_path)
+
+                # Check if conversation has a name
+                conv_name = None
+                if metadata:
+                    conv_name = metadata.get("conversation_name", "")
+                    if conv_name:
+                        conv_name = conv_name.strip()
+
+                if conv_name:
+                    # Named conversation — show name prominently with green color
+                    tokens = metadata.get("total_tokens", -1) if metadata else -1
+                    tokens_str = self.format_token_count(tokens)
+                    line = f"★ {conv_name} | {tokens_str}"
+                    colored_line = Tools.return_string_colored(line, "green", "black")
+                    print(f"{str(idx + 1).zfill(2)}. {colored_line}")
+                    print(f"    {formatted_date_time} -> {content}\n")
+                else:
+                    # Unnamed conversation — original format
+                    print(f"{str(idx + 1).zfill(2)}. {formatted_date_time} -> {content}\n")
 
             if end < total_files:
                 try:
@@ -117,6 +137,27 @@ class History:
         except Exception as e:
             return f"  Error: {e}"
 
+    def get_conversation_metadata(self, file_path):
+        """Extract metadata from a conversation file. Returns dict or None."""
+        try:
+            with open(file_path, 'r') as file:
+                data = json.load(file)
+                if isinstance(data, dict):
+                    return data.get("metadata", None)
+                return None
+        except:
+            return None
+
+    @staticmethod
+    def format_token_count(tokens):
+        """Format token count for display."""
+        if tokens is None or tokens == -1:
+            return "(no calculation yet)"
+        elif tokens == 0:
+            return "0 tokens"
+        else:
+            return f"{tokens:,} tokens"
+
 # WATCHOUT: There is no turning back!
     def delete_conversation(self, filepath):
         try:
@@ -156,6 +197,50 @@ class History:
         # Placeholder method to delete conversations
         for file in files:
             self.delete_conversation(file)
+
+    """
+    Set or change the conversation_name attribute in metadata.
+    If metadata is missing (old list format), creates it with tokens = -1.
+    """
+    def set_conversation_name(self, filepath, name):
+        try:
+            name = name.strip()
+            if not name:
+                print("Name cannot be empty.")
+                return False
+            if len(name) > config.MAX_CONVERSATION_NAME_LENGTH:
+                print(f"Name too long. Maximum {config.MAX_CONVERSATION_NAME_LENGTH} characters.")
+                return False
+
+            with open(filepath, 'r') as f:
+                data = json.load(f)
+
+            # Convert to dict format if needed (old list format)
+            if isinstance(data, list):
+                data = {
+                    "messages": data,
+                    "metadata": {
+                        "conversation_name": name,
+                        "last_updated": datetime.now().strftime("%Y%m%d-%H%M%S"),
+                        "total_input_tokens": -1,
+                        "total_output_tokens": -1,
+                        "total_tokens": -1
+                    }
+                }
+            else:
+                # Dict format — just update the name
+                if "metadata" not in data:
+                    data["metadata"] = {}
+                data["metadata"]["conversation_name"] = name
+
+            with open(filepath, 'w') as f:
+                json.dump(data, f, indent=4)
+
+            print(f"✓ Conversation named: {name}")
+            return True
+        except Exception as e:
+            print(f"Error naming conversation: {e}")
+            return False
 
    
     """
@@ -244,7 +329,7 @@ class History:
                 if len(valid_indices) == 1:
                     filepath= os.path.join(self.folder_path, json_files[valid_indices[0] - 1])
                     print (f"file to operate: {filepath}")
-                    choice = input("Options: (V)iew, (S)elect, (E)xport to Markdown or (D)elete conversation (0 to abort):")
+                    choice = input("Options: (V)iew, (S)elect, (E)xport, (N)ame or (D)elete conversation (0 to abort):")
                     #Assembly the complete folder to access the conversation
                     if choice == "Delete": #Need to type exactly 'Delete' to avoid mistakes.
                         self.delete_conversation(filepath)
@@ -254,6 +339,9 @@ class History:
                         self.export_to_markdown(filepath)
                     elif choice.upper() == "S":
                         return filepath #return with a conversation to continue the dialog.
+                    elif choice.upper() == "N":
+                        name = input("Enter conversation name: ")
+                        self.set_conversation_name(filepath, name)
                     elif choice == "0":
                         return
                     else:
@@ -322,7 +410,20 @@ class History:
                     return f.read()
             except:
                 return f"[Error reading: {ref_name}]"
-        return re.sub(r'\[Ref: ([^\]]+)\]', replace_ref, text)
+
+        def replace_path(match):
+            file_path = match.group(1)
+            if not os.path.exists(file_path):
+                return f"[Path not found: {file_path}]"
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+                    return f.read()
+            except:
+                return f"[Error reading: {file_path}]"
+
+        text = re.sub(r'\[Ref: ([^\]]+)\]', replace_ref, text)
+        text = re.sub(r'\[Path: ([^\]]+)\]', replace_path, text)
+        return text
 
     def export_to_markdown(self, file_path):
         try:
@@ -359,6 +460,193 @@ class History:
             print(f"Error: Invalid JSON in {file_path}")
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
+
+    # ============================================================
+    # ORPHANED CONVERSATIONS
+    # ============================================================
+
+    @staticmethod
+    def list_orphaned_folders():
+        """
+        Compare models/ directory with active model_folder in models.yaml.
+        Return list of (folder_name, folder_path, conversation_count) for orphaned folders.
+        """
+        active_folders = set()
+        for provider_data in config.MODELS_CONFIGURATION.get("providers", {}).values():
+            for model in provider_data.get("models", []):
+                folder = model.get("model_folder", "")
+                if folder:
+                    active_folders.add(os.path.normpath(folder))
+
+        models_base = "models"
+        orphaned = []
+        if os.path.exists(models_base):
+            for folder_name in os.listdir(models_base):
+                folder_path = os.path.join(models_base, folder_name)
+                if os.path.isdir(folder_path):
+                    norm_path = os.path.normpath(folder_path)
+                    if norm_path not in active_folders:
+                        count = len([f for f in os.listdir(folder_path)
+                                    if f.endswith('.json') and f.startswith('conversation_history_')])
+                        if count > 0:
+                            orphaned.append((folder_name, folder_path, count))
+
+        return sorted(orphaned, key=lambda x: x[0])
+
+    def select_orphaned_file(self):
+        """
+        Browse orphaned conversations with restricted actions: View/Export/Delete only.
+        Supports multiple selection for delete (e.g., 1,3,5-8).
+        """
+        json_files = self.list_json_files()
+        if not json_files:
+            return None
+
+        while True:
+            try:
+                selection = input("Select file# (comma-separated, ranges like 1-5, 0 to abort): ")
+                if selection == '0':
+                    return None
+
+                # Parse selection: supports "1,3,5-8" format
+                selected_indices = []
+                for part in selection.split(','):
+                    part = part.strip()
+                    if '-' in part:
+                        start, end = part.split('-', 1)
+                        selected_indices.extend(range(int(start), int(end) + 1))
+                    else:
+                        selected_indices.append(int(part))
+
+                valid_indices = [index for index in selected_indices if 1 <= index <= len(json_files)]
+                invalid_indices = [index for index in selected_indices if index not in valid_indices]
+
+                if invalid_indices:
+                    print(f"Invalid selections: {invalid_indices}. Please try again.")
+                    continue
+
+                if len(valid_indices) == 1:
+                    # Single selection — full options
+                    filepath = os.path.join(self.folder_path, json_files[valid_indices[0] - 1])
+                    choice = input("Options: (V)iew, (E)xport, (N)ame, (D)elete conversation (0 to abort): ")
+
+                    if choice.upper() == "V":
+                        self.print_conversation_readonly(filepath)
+                    elif choice.upper() == "E":
+                        self.export_to_markdown(filepath)
+                    elif choice.upper() == "N":
+                        name = input("Enter conversation name: ")
+                        self.set_conversation_name(filepath, name)
+                    elif choice.upper() == "D":
+                        confirm = input(f"Delete {os.path.basename(filepath)}? (yes/no): ")
+                        if confirm.lower() == "yes":
+                            self.delete_conversation(filepath)
+                            json_files = self.list_json_files()
+                            if not json_files:
+                                print("No more conversations in this folder.")
+                                return None
+                    elif choice == "0":
+                        return None
+                    else:
+                        print("Invalid choice.")
+                else:
+                    # Multiple selection — delete only
+                    files = []
+                    for index in valid_indices:
+                        filepath = os.path.join(self.folder_path, json_files[index - 1])
+                        files.append(filepath)
+
+                    print(f"\n{len(files)} conversations selected:")
+                    for f in files:
+                        print(f"  - {os.path.basename(f)}")
+
+                    choice = input("\n(D)elete all selected (0 to abort): ")
+
+                    if choice.upper() == "D":
+                        confirm = input(f"Delete {len(files)} conversations? (yes/no): ")
+                        if confirm.lower() == "yes":
+                            for f in files:
+                                self.delete_conversation(f)
+                            print(f"Deleted {len(files)} conversations.")
+                            json_files = self.list_json_files()
+                            if not json_files:
+                                print("No more conversations in this folder.")
+                                return None
+                    elif choice == "0":
+                        return None
+                    else:
+                        print("Invalid choice.")
+
+            except ValueError:
+                print("Invalid input. Use numbers like: 1,3,5-8")
+
+    def print_conversation_readonly(self, file_path):
+        """
+        Print conversation with [DEPRECATED] header. Read-only, no actions.
+        """
+        os.system("cls" if os.name == "nt" else "clear")
+
+        fname = os.path.basename(file_path)
+        timestamp = fname[len('conversation_history_'):-5]
+
+        with open(file_path, 'r') as ch:
+            data = json.load(ch)
+
+        messages = data["messages"] if isinstance(data, dict) else data
+        model_folder = os.path.dirname(file_path)
+
+        Tools.print_colored("=" * 60, "black", "red")
+        Tools.print_colored("  [DEPRECATED MODEL]  This conversation is read-only", "white", "red")
+        Tools.print_colored("=" * 60, "black", "red")
+        Tools.print_colored(f"Conversation from: {timestamp}", "black", "green")
+        print("\n")
+
+        for entry in messages:
+            role = entry.get('role', '')
+            content = entry.get('content', '')
+
+            if role == 'user' and '[File:' in str(content):
+                file_match = re.search(r'\[File: ([^\]]+)\]', str(content))
+                if file_match:
+                    Tools.print_colored(f"  Attached: {file_match.group(1)}", "gray", "black")
+
+            if '[Ref:' in str(content) or '[Path:' in str(content):
+                content = self._resolve_refs_for_display(content, model_folder)
+
+            if role == 'user':
+                Tools.print_colored("Your question:", "black", "green")
+                print(content)
+            elif role in ('assistant', 'model'):
+                Tools.print_colored("Answer:", "blue", "white")
+                if USE_MARKDOWN:
+                    console = Console()
+                    md = Markdown(content)
+                    console.print(md)
+                else:
+                    print(content)
+
+        Tools.print_colored(f"\nConversation ended: {timestamp}", "black", "green")
+
+    @staticmethod
+    def delete_orphaned_model(folder_path):
+        """
+        Delete an entire orphaned model folder and all its contents.
+        Requires typing the folder name for confirmation.
+        """
+        folder_name = os.path.basename(folder_path)
+        file_count = len([f for f in os.listdir(folder_path) if f.endswith('.json')])
+
+        print(f"\nThis will DELETE {file_count} conversations from '{folder_name}'.")
+        print(f"Path: {folder_path}")
+        confirm = input("Type the folder name to confirm (or 0 to abort): ")
+
+        if confirm == folder_name:
+            shutil.rmtree(folder_path)
+            print(f"Deleted: {folder_path}")
+        elif confirm == "0":
+            print("Aborted.")
+        else:
+            print("Folder name didn't match. Aborted.")
 
 
  # Example usage:

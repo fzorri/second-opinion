@@ -25,6 +25,7 @@ class LLMBase:
         self.thinking_param = self.config.get("thinking_param", "thinking")
 
         self.client = None # Client will be initialized by subclass
+        self.last_usage = None # Token usage from last response
 
     def _init_metadata(self, conversation_name=""):
         return {
@@ -71,6 +72,7 @@ class LLMBase:
         return usage if usage else None
 
     def _update_metadata(self, usage=None):
+        self.last_usage = usage  # Store for display
         self.conversation_history["metadata"]["last_updated"] = datetime.now().strftime("%Y%m%d-%H%M%S")
         if usage:
             self.conversation_history["metadata"]["total_input_tokens"] += usage.get("input_tokens", 0)
@@ -108,7 +110,28 @@ class LLMBase:
             except Exception as e:
                 return f"[Error reading {path}: {e}]"
 
-        return re.sub(r'@("([^"]+)"|\'([^\']+)\'|(\S+))', replace_at, text)
+        # @@ syntax: direct path reference, no copy
+        def replace_double_at(match):
+            path = match.group(1).strip('"').strip("'")
+            path = os.path.expanduser(path)
+            abs_path = os.path.abspath(path)
+            if not os.path.exists(abs_path):
+                print(f"[Path not found: {abs_path}]")
+                return f"[Path not found: {abs_path}]"
+            try:
+                size = os.path.getsize(abs_path)
+                with open(abs_path, 'r', encoding='utf-8', errors='replace') as f:
+                    content = f.read()
+                lines = content.count('\n') + 1
+                name = os.path.basename(abs_path)
+                print(f"[Direct ref: {name} - {lines} lines, {size} chars]")
+                return f"[File: {name} - {lines} lines, {size} chars]\n[Path: {abs_path}]\n[/File]"
+            except Exception as e:
+                return f"[Error reading {abs_path}: {e}]"
+
+        text = re.sub(r'@@("([^"]+)"|\'([^\']+)\'|(\S+))', replace_double_at, text)
+        text = re.sub(r'@("([^"]+)"|\'([^\']+)\'|(\S+))', replace_at, text)
+        return text
 
     def _resolve_refs(self, text):
         def replace_ref(match):
@@ -121,7 +144,20 @@ class LLMBase:
                     return f.read()
             except Exception as e:
                 return f"[Error reading attachment {ref_name}: {e}]"
-        return re.sub(r'\[Ref: ([^\]]+)\]', replace_ref, text)
+
+        def replace_path(match):
+            file_path = match.group(1)
+            if not os.path.exists(file_path):
+                return f"[Path not found: {file_path}]"
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+                    return f.read()
+            except Exception as e:
+                return f"[Error reading {file_path}: {e}]"
+
+        text = re.sub(r'\[Ref: ([^\]]+)\]', replace_ref, text)
+        text = re.sub(r'\[Path: ([^\]]+)\]', replace_path, text)
+        return text
 
     def initialize_client(self):
         raise NotImplementedError("Subclasses should implement this method.")
@@ -131,6 +167,11 @@ class LLMBase:
 
     def get_response(self, text):
         text = self._resolve_files(text)
+        # Ensure conversation_history is always in dict format
+        if not hasattr(self, 'conversation_history') or self.conversation_history is None:
+            self.conversation_history = self._new_conversation()
+        elif isinstance(self.conversation_history, list):
+            self.conversation_history = self._normalize_conversation(self.conversation_history)
         return self.send_message(text)
 
     def load_conversation(self, conversation_history):
