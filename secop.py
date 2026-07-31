@@ -9,6 +9,7 @@ from history import History
 from tools import Tools
 import json
 from config import MODELS_CONFIGURATION
+from search_engine import handle_search, bulk_index_all, reconcile_index, get_index_stats
 
 MODEL_COLUMN_WIDTH = 38
 MODEL_PATH = 'llm_classes'
@@ -185,6 +186,17 @@ def main2():
                             max_tokens_info = Tools.return_string_colored(str(model_config.get("max_tokens")), "white", "blue")
                             max_tokens_info = f" ({max_tokens_info} tokens)"
                         display_name += max_tokens_info
+                        
+                        # Show [Img] tag for models with image support
+                        if model_config.get("media", {}).get("image", False):
+                            display_name += f" {Tools.return_string_colored('[Img]', 'white', 'magenta')}"
+                        
+                        # Show [Web Search] tag only if explicitly set in YAML
+                        if "web_search" in model_config:
+                            if model_config.get("web_search", False):
+                                display_name += f" {Tools.return_string_colored('[Web Search ON]', 'white', 'green')}"
+                            else:
+                                display_name += f" {Tools.return_string_colored('[Web Search OFF]', 'white', 'gray')}"
                     else:
                         reason = model_config.get('enabled_reason', '(no reason)')
                         display_name += f" {Tools.return_string_colored('DISABLED','white','red')} ({reason})"
@@ -202,17 +214,76 @@ def main2():
         for i, model_info in enumerate(all_models_info, start=1):
             print(f"{str(i).zfill(2)}: {model_info['display_name']}")
         
-        print ("\nCOMMANDS\nA: Autocheck: test if all models are working properly\nO: Orphaned conversations: browse deprecated model histories")    
+        print ("\nCOMMANDS\nA: Autocheck: test if all models are working properly\nO: Orphaned conversations: browse deprecated model histories\nS: Search: search all conversation histories (/search)")    
         try:
+            return_to_main = False
             while True:
                 try:
-                    choice = input("Select A, O, Model# or 0 to abort:")
+                    choice = input("Select A, O, S, Model# or 0 to abort:")
                     if choice.upper() == "A":
                         autocheck()
                         continue
                     if choice.upper() == "O":
                         handle_orphaned_conversations()
                         continue
+                    if choice.upper() == "S":
+                        result = handle_search()
+                        if result:
+                            # User selected a conversation to chat with
+                            # Find the model that owns this conversation
+                            result_dir = os.path.dirname(result)
+                            selected_llm = None
+                            for mi in all_models_info:
+                                model_folder = mi['model_config'].get('model_folder', '')
+                                if os.path.normpath(result_dir) == os.path.normpath(model_folder):
+                                    llm_class = mi['llm_class']
+                                    model_config = mi['model_config']
+                                    selected_llm = llm_class(model_config)
+                                    break
+                            
+                            if selected_llm is None:
+                                print(f"  Could not find model for conversation in: {result_dir}")
+                                continue
+                            
+                            # Load the conversation
+                            selected_llm.load_conversation(result)
+                            Tools.print_conversation(result, selected_llm.model_name)
+                            
+                            # Start chat loop
+                            print("\n")
+                            toPrint = f"Chat with {selected_llm.model_name} - Type 'end' or '*' in a new line to finalize, Ctl-C to return to the menu"
+                            Tools.print_colored(toPrint, "black", "green")
+                            
+                            while True:
+                                try:
+                                    Tools.print_colored(selected_llm.model_name + " - Enter your question, type 'end' in a separate line to end input, Ctl-C to return to the menu", "black", "green")
+                                    content = Tools.getInput()
+                                    spinner = Halo(text=f'Waiting for {selected_llm.model_name}...', spinner='dots')
+                                    with spinner:
+                                        model_name, response = selected_llm.get_response(content)
+                                    
+                                    Tools.print_colored(f"{model_name} answer:", "blue", "white")
+                                    
+                                    if Tools.USE_MARKDOWN:
+                                        console = Console()
+                                        md = Markdown(response)
+                                        console.print(md)
+                                    else:
+                                        print(response)
+                                    
+                                    if selected_llm.last_usage:
+                                        u = selected_llm.last_usage
+                                        tokens_str = f"In: {u.get('input_tokens', 0)} | Out: {u.get('output_tokens', 0)} | Total: {u.get('total_tokens', 0)}"
+                                        Tools.print_colored(f"Tokens — {tokens_str}", "black", "cyan")
+                                except KeyboardInterrupt:
+                                    print("\nReturning to the menu...\n\n")
+                                    return_to_main = True
+                                    break
+                            if return_to_main:
+                                break
+                        continue
+                    if return_to_main:
+                        break
                     choice_num = int(choice)
                     if choice_num == 0:
                         return ""
@@ -224,6 +295,9 @@ def main2():
                 except ValueError as e:
                         print(f"Invalid choice: {e.args[0]}")
                         continue
+            
+            if return_to_main:
+                continue
             
             selected_model_info = all_models_info[choice_num - 1]
             if not selected_model_info["is_enabled"]:

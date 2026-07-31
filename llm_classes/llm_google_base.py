@@ -25,7 +25,6 @@ class Google_LLM(LLMBase):
         return genai.configure(api_key=self.api_key)
 
     def send_message(self, text):
-        text = self._resolve_refs(text)
         generation_config = { "temperature": 0, "top_p": 0.95, "top_k": 64, "max_output_tokens": 8192, "response_mime_type": "text/plain",}
         safety_settings = [
             {"category": "HARM_CATEGORY_HARASSMENT","threshold": "BLOCK_NONE",},
@@ -33,9 +32,38 @@ class Google_LLM(LLMBase):
             {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE", },
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE", },]
         try:
-            model = genai.GenerativeModel( model_name=self.model_id, safety_settings=safety_settings, generation_config=generation_config,)
+            # Build tools list for web search
+            tools = []
+            if self.web_search:
+                tools.append({"google_search": {}})
+            
+            model = genai.GenerativeModel(
+                model_name=self.model_id,
+                safety_settings=safety_settings,
+                generation_config=generation_config,
+                tools=tools if tools else None
+            )
 
-            self.conversation_history["messages"].append({"role": "user", "parts": [text + "\n"]})
+            # Handle multimodal content (list of blocks) - skip _resolve_refs
+            if isinstance(text, list):
+                parts = []
+                for block in text:
+                    if block["type"] == "text":
+                        # Resolve refs in text blocks only
+                        resolved = self._resolve_refs(block["text"])
+                        parts.append(resolved)
+                    elif block["type"] == "image":
+                        # Gemini wants raw bytes, not base64 string
+                        import base64
+                        parts.append({
+                            "mime_type": block["mime_type"],
+                            "data": base64.b64decode(block["data"])
+                        })
+                self.conversation_history["messages"].append({"role": "user", "parts": parts})
+            else:
+                text = self._resolve_refs(text)
+                self.conversation_history["messages"].append({"role": "user", "parts": [text + "\n"]})
+            
             chat_session = model.start_chat(history=self.conversation_history["messages"])
             response = chat_session.send_message(text)
 

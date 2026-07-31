@@ -23,8 +23,31 @@ class Anthropic_LLM(LLMBase):
         return anthropic.Anthropic(api_key=self.api_key)
 
     def send_message(self, text):
-        text = self._resolve_refs(text)
-        self.conversation_history["messages"].append({"role": "user", "content": text})
+        # Handle multimodal content (list of blocks) - skip _resolve_refs
+        # NOTE: Anthropic retains images across turns (unlike other providers).
+        # For now, we re-send images in history for consistency.
+        # A future optimization could strip images from history for Anthropic
+        # to save tokens, since Claude already has them in context.
+        if isinstance(text, list):
+            content = []
+            for block in text:
+                if block["type"] == "text":
+                    # Resolve refs in text blocks only
+                    resolved = self._resolve_refs(block["text"])
+                    content.append({"type": "text", "text": resolved})
+                elif block["type"] == "image":
+                    content.append({
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": block["mime_type"],
+                            "data": block["data"],
+                        }
+                    })
+            self.conversation_history["messages"].append({"role": "user", "content": content})
+        else:
+            text = self._resolve_refs(text)
+            self.conversation_history["messages"].append({"role": "user", "content": text})
 
         try:
             response = self.client.messages.create( model=self.model_id,max_tokens=2048,

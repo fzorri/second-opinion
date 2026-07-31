@@ -1,8 +1,16 @@
 # llm_base.py
 import os
 import re
+import base64
 from datetime import datetime
-from config import MAX_FILE_SIZE_EMBED
+from config import MAX_FILE_SIZE_EMBED, MAX_FILE_SIZE_IMG
+
+# Supported image extensions and their MIME types
+IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+IMAGE_MIMES = {
+    '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
+    '.png': 'image/png', '.gif': 'image/gif', '.webp': 'image/webp'
+}
 
 
 class LLMBase:
@@ -23,6 +31,12 @@ class LLMBase:
         self.enable_thinking = self.config.get("enable_thinking", False)
         self.reasoning_effort = self.config.get("reasoning_effort", "high")
         self.thinking_param = self.config.get("thinking_param", "thinking")
+
+        # Image support configuration
+        self.supports_image = self.config.get("media", {}).get("image", False)
+        
+        # Web search configuration (optional - only set if explicitly in YAML)
+        self.web_search = self.config.get("web_search", False)
 
         self.client = None # Client will be initialized by subclass
         self.last_usage = None # Token usage from last response
@@ -79,6 +93,50 @@ class LLMBase:
             self.conversation_history["metadata"]["total_output_tokens"] += usage.get("output_tokens", 0)
             self.conversation_history["metadata"]["total_tokens"] += usage.get("total_tokens", 0)
 
+    def _is_image_file(self, path):
+        """Check if a file is a supported image format."""
+        ext = os.path.splitext(path)[1].lower()
+        return ext in IMAGE_EXTENSIONS
+
+    def _encode_image(self, path):
+        """Encode an image file to base64 with its MIME type."""
+        ext = os.path.splitext(path)[1].lower()
+        mime = IMAGE_MIMES.get(ext, 'image/jpeg')
+        with open(path, 'rb') as f:
+            data = base64.b64encode(f.read()).decode('utf-8')
+        return mime, data
+
+    def _build_multimodal_content(self, text):
+        """Convert text with [IMAGE:path] markers into a list of content blocks."""
+        blocks = []
+        parts = re.split(r'\[IMAGE:([^\]]+)\]', text)
+        
+        for i, part in enumerate(parts):
+            if i % 2 == 0:
+                # Text part
+                if part.strip():
+                    blocks.append({"type": "text", "text": part})
+            else:
+                # Image path
+                path = part.strip()
+                try:
+                    mime, data = self._encode_image(path)
+                    name = os.path.basename(path)
+                    size = os.path.getsize(path)
+                    print(f"[Image: {name} - {mime} - {size} bytes]")
+                    blocks.append({
+                        "type": "image",
+                        "mime_type": mime,
+                        "data": data,
+                        "path": path
+                    })
+                except Exception as e:
+                    name = os.path.basename(path)
+                    print(f"[Image error: {name} - {e}]")
+                    blocks.append({"type": "text", "text": f"[Image error: {name} - {e}]"})
+        
+        return blocks if blocks else [{"type": "text", "text": text}]
+
     def _resolve_files(self, text):
         max_embed = self.config.get("max_file_size_embed") or MAX_FILE_SIZE_EMBED
 
@@ -87,6 +145,26 @@ class LLMBase:
             path = os.path.expanduser(path)
             if not os.path.exists(path):
                 return f"[File not found: {path}]"
+            
+            # Image handling
+            if self._is_image_file(path):
+                if not self.supports_image:
+                    name = os.path.basename(path)
+                    print(f"[Image ignored: {name} - model does not support images]")
+                    return f"[Image: {name} - not supported by this model]"
+                
+                # Check file size
+                size = os.path.getsize(path)
+                if size > MAX_FILE_SIZE_IMG:
+                    name = os.path.basename(path)
+                    kb = size // 1024
+                    max_kb = MAX_FILE_SIZE_IMG // 1024
+                    print(f"[Image ignored: {name} - {kb}KB exceeds {max_kb}KB limit]")
+                    return f"[Image: {name} - exceeds size limit ({kb}KB > {max_kb}KB)]"
+                
+                return f"[IMAGE:{path}]"
+            
+            # Text file handling (existing behavior)
             try:
                 size = os.path.getsize(path)
                 with open(path, 'r', encoding='utf-8', errors='replace') as f:
@@ -172,7 +250,13 @@ class LLMBase:
             self.conversation_history = self._new_conversation()
         elif isinstance(self.conversation_history, list):
             self.conversation_history = self._normalize_conversation(self.conversation_history)
-        return self.send_message(text)
+        
+        # Check if text contains image markers
+        if '[IMAGE:' in text:
+            content = self._build_multimodal_content(text)
+            return self.send_message(content)  # Pass list, not string
+        else:
+            return self.send_message(text)  # Pass string (existing behavior)
 
     def load_conversation(self, conversation_history):
         raise NotImplementedError("Subclasses should implement this method.")

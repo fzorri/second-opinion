@@ -9,6 +9,7 @@ from datetime import datetime
 from tools import Tools
 import json
 import config
+from search_engine import notify_deletion
 
 # Optionally let's add markdown support
 from rich.console import Console
@@ -182,6 +183,7 @@ class History:
                 pass
             # Delete JSON file
             os.remove(filepath)
+            notify_deletion(filepath)
             print(f"File {filepath} has been deleted.")
         except FileNotFoundError:
             print(f"File {filepath} does not exist.")
@@ -641,6 +643,10 @@ class History:
         confirm = input("Type the folder name to confirm (or 0 to abort): ")
 
         if confirm == folder_name:
+            # Notify search index for each conversation file before deletion
+            for f in os.listdir(folder_path):
+                if f.endswith('.json') and f.startswith('conversation_history_'):
+                    notify_deletion(os.path.join(folder_path, f))
             shutil.rmtree(folder_path)
             print(f"Deleted: {folder_path}")
         elif confirm == "0":

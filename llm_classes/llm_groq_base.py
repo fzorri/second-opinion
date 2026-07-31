@@ -22,8 +22,27 @@ class Groq_LLM(LLMBase):
         return Groq(api_key=self.api_key)        
 
     def send_message(self, text):
-        text = self._resolve_refs(text)
-        self.conversation_history["messages"].append({"role": "user", "content": text})
+        # Handle multimodal content (list of blocks) - skip _resolve_refs
+        if isinstance(text, list):
+            content = []
+            for block in text:
+                if block["type"] == "text":
+                    # Resolve refs in text blocks only
+                    resolved = self._resolve_refs(block["text"])
+                    content.append({"type": "text", "text": resolved})
+                elif block["type"] == "image":
+                    content.append({
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:{block['mime_type']};base64,{block['data']}",
+                            "detail": "auto"
+                        }
+                    })
+            self.conversation_history["messages"].append({"role": "user", "content": content})
+        else:
+            text = self._resolve_refs(text)
+            self.conversation_history["messages"].append({"role": "user", "content": text})
+        
         try:
             response = self.client.chat.completions.create(
                 model=self.model_id,

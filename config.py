@@ -41,6 +41,12 @@ MODELS_YAML_PATH = "models.yaml"
 # File attachment threshold (bytes) - files smaller than this are embedded inline
 MAX_FILE_SIZE_EMBED = int(os.getenv('MAX_FILE_SIZE_EMBED', '10240'))
 
+# Maximum image file size (bytes) - images larger than this are ignored
+MAX_FILE_SIZE_IMG = int(os.getenv('MAX_FILE_SIZE_IMG', '512000'))
+
+# Search index database path
+SEARCH_DB_PATH = os.getenv('SEARCH_DB_PATH', os.path.join(os.path.dirname(__file__), 'search_index.db'))
+
 # Maximum length for conversation names
 MAX_CONVERSATION_NAME_LENGTH = int(os.getenv('MAX_CONVERSATION_NAME_LENGTH', '120'))
 
@@ -98,6 +104,9 @@ def load_model_configurations():
                 model["enabled"] = True
             if "show_reasoning" not in model:
                 model["show_reasoning"] = True  # Default: show reasoning if present
+            if "media" not in model:
+                model["media"] = {"image": False}  # Default: no image support
+            # Note: web_search is optional - only set if explicitly in YAML
             
             # Nvidia-specific thinking configuration
             if provider_name == "nvidia":
